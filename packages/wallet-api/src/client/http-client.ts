@@ -138,7 +138,10 @@ export class HttpClient {
    * Build URL with query parameters
    */
   private buildUrl(path: string, query?: Record<string, any>): string {
-    const url = new URL(path.startsWith('/') ? path.slice(1) : path, this.baseURL)
+    // Ensure baseURL ends with / and path doesn't start with /
+    const normalizedBaseURL = this.baseURL.endsWith('/') ? this.baseURL : this.baseURL + '/'
+    const normalizedPath = path.startsWith('/') ? path.slice(1) : path
+    const url = new URL(normalizedPath, normalizedBaseURL)
     
     if (query) {
       Object.entries(query).forEach(([key, value]) => {
