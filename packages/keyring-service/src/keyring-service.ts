@@ -195,6 +195,15 @@ export class KeyringService extends EventEmitter {
     return keyring
   }
 
+  importPublicKeyOnly = async (pubkey: string, addressType: AddressType) => {
+    // await this.persistAllKeyrings()
+    const keyring = await this.addNewKeyring('Readonly', [pubkey], addressType)
+    // await this.persistAllKeyrings()
+    this.setUnlocked()
+    this.fullUpdate()
+    return keyring
+  }
+
   generateMnemonic = (): string => {
     return bip39.generateMnemonic(128)
   }
