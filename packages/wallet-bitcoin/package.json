@@ -1,6 +1,6 @@
 {
   "name": "@unisat/wallet-bitcoin",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Bitcoin core utilities for UniSat wallet ecosystem",
   "main": "lib/index.js",
   "module": "lib/index.mjs",
