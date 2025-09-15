@@ -1,5 +1,4 @@
-import { DEFAULT_BBN_GAS_LIMIT } from 'cosmos'
-import { bbnDevnet } from 'types'
+import { bbnDevnet, DEFAULT_BBN_GAS_LIMIT } from 'types'
 
 /**
  * calculate low, medium, high gas fee

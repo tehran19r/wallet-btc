@@ -1,6 +1,6 @@
 // Cosmos Keyring and utilities
-export { CosmosKeyring, DEFAULT_BBN_GAS_PRICE, DEFAULT_BBN_GAS_LIMIT } from './CosmosKeyring';
-export type { CosmosProvider } from './CosmosKeyring';
+export { CosmosKeyring } from './CosmosKeyring'
+export type { CosmosProvider } from './CosmosKeyring'
 
 // Crypto utilities
 export {
@@ -8,8 +8,8 @@ export {
   PrivKeySecp256k1,
   PubKeySecp256k1,
   convertBech32Address,
-  publicKeyHexToAddress
-} from './crypto';
+  publicKeyHexToAddress,
+} from './crypto'
 
 // Utility functions
 export {
@@ -19,9 +19,9 @@ export {
   serializeSignDoc,
   makeADR36AminoSignDoc,
   encodeSecp256k1Pubkey,
-  encodeSecp256k1Signature
-} from './utils';
+  encodeSecp256k1Signature,
+} from './utils'
 
 // Types
-export type { Key, CosmosBalance, CosmosChainInfo, BabylonAddressSummary } from './types';
-export { CosmosSignDataType } from './types';
+export type { Key, CosmosBalance, CosmosChainInfo, BabylonAddressSummary } from './types'
+export { CosmosSignDataType } from './types'

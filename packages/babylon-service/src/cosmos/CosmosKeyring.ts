@@ -24,11 +24,9 @@ import { Tendermint34Client } from '@cosmjs/tendermint-rpc'
 import { encodeSecp256k1Pubkey } from './utils'
 import { PubKeySecp256k1 } from './crypto'
 import type { Key, CosmosBalance, CosmosChainInfo } from './types'
+import { DEFAULT_BBN_GAS_PRICE } from 'types'
 
 const REWARD_GAUGE_KEY_BTC_DELEGATION = 'btc_delegation'
-// Default gas price for BABY
-export const DEFAULT_BBN_GAS_PRICE = '0.007'
-export const DEFAULT_BBN_GAS_LIMIT = '300000'
 
 export function bech32AddressToAddress(bech32Address: string): Uint8Array {
   const decoded = bech32.decode(bech32Address)
