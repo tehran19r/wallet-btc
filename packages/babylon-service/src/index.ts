@@ -2,19 +2,19 @@
 // For types only, import from '@unisat/babylon-service/types'
 
 // API functions and classes
-export { apiWrapper, ServerError } from './api';
-export { getDelegationV2, getDelegationsV2 } from './api';
-export { getDelegationV2StakingState } from './types/delegationsV2';
+export { apiWrapper, ServerError } from './api'
+export { getDelegationV2, getDelegationsV2 } from './api'
+export { getDelegationV2StakingState } from './types/delegationsV2'
 
-// Cosmos functionality 
-export { CosmosKeyring } from './cosmos';
-export { 
-  Bech32Address, 
-  PrivKeySecp256k1, 
+// Cosmos functionality
+export { CosmosKeyring } from './cosmos'
+export {
+  Bech32Address,
+  PrivKeySecp256k1,
   PubKeySecp256k1,
   convertBech32Address,
-  publicKeyHexToAddress 
-} from './cosmos';
+  publicKeyHexToAddress,
+} from './cosmos'
 export {
   sortObjectByKey,
   sortedJsonByKeyStringify,
@@ -22,22 +22,25 @@ export {
   serializeSignDoc,
   makeADR36AminoSignDoc,
   encodeSecp256k1Pubkey,
-  encodeSecp256k1Signature
-} from './cosmos';
+  encodeSecp256k1Signature,
+  directSignDocToBytesHex,
+  arbitrarySignDocToBytesHex,
+  encodeSignature,
+} from './cosmos'
 
 // Utility functions
-export { calculateFeeOptions, formatFee } from './utils';
+export { calculateFeeOptions, formatFee } from './utils'
 
 // Re-export types and constants for convenience
 // Users can also import these from '@unisat/babylon-service/types' for better tree-shaking
-export type * from './types';
-export type { Key, CosmosBalance, CosmosChainInfo, BabylonAddressSummary } from './cosmos';
+export type * from './types'
+export type { Key, CosmosBalance, CosmosChainInfo, BabylonAddressSummary } from './cosmos'
 
 // Constants and enums (these are actually needed at runtime)
-export { 
-  BabylonPhaseState, 
-  ChainType, 
-  BABYLON_CONFIG_MAP, 
+export {
+  BabylonPhaseState,
+  ChainType,
+  BABYLON_CONFIG_MAP,
   PHASE1,
   COSMOS_CHAINS,
   COSMOS_CHAINS_MAP,
@@ -49,5 +52,5 @@ export {
   ErrorType,
   CosmosSignDataType,
   DEFAULT_BBN_GAS_PRICE,
-  DEFAULT_BBN_GAS_LIMIT
-} from './types-only';
+  DEFAULT_BBN_GAS_LIMIT,
+} from './types-only'

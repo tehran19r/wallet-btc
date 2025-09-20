@@ -20,6 +20,9 @@ export {
   makeADR36AminoSignDoc,
   encodeSecp256k1Pubkey,
   encodeSecp256k1Signature,
+  directSignDocToBytesHex,
+  arbitrarySignDocToBytesHex,
+  encodeSignature,
 } from './utils'
 
 // Types

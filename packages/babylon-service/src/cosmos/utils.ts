@@ -1,5 +1,6 @@
 import { Buffer } from 'buffer'
-
+import * as encoding from '@cosmjs/encoding'
+import { makeSignBytes } from '@cosmjs/proto-signing'
 export function sortObjectByKey(obj: Record<string, any>): any {
   if (typeof obj !== 'object' || obj === null) {
     return obj
@@ -79,4 +80,29 @@ export function encodeSecp256k1Signature(pubkey: Uint8Array, signature: Uint8Arr
     pub_key: encodeSecp256k1Pubkey(pubkey),
     signature: Buffer.from(signature).toString('base64'),
   }
+}
+
+export const objToUint8Array = (obj: any) => {
+  const arr: number[] = []
+  for (const id in obj) {
+    arr[parseInt(id)] = obj[id]
+  }
+  return Uint8Array.from(arr)
+}
+
+export function directSignDocToBytesHex(signDoc: any): string {
+  signDoc.bodyBytes = objToUint8Array(signDoc.bodyBytes)
+  signDoc.authInfoBytes = objToUint8Array(signDoc.authInfoBytes)
+  const signBytes = makeSignBytes(signDoc)
+  return encoding.toHex(signBytes)
+}
+
+export function arbitrarySignDocToBytesHex(signerAddress: string, data: any): string {
+  const signDoc = makeADR36AminoSignDoc(signerAddress, data)
+  const signBytes = serializeSignDoc(signDoc)
+  return encoding.toHex(signBytes)
+}
+
+export function encodeSignature(publicKey: string, signature: string) {
+  return encodeSecp256k1Signature(encoding.fromHex(publicKey), encoding.fromHex(signature))
 }
