@@ -1,7 +1,17 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { debounce } from 'debounce'
 
-import { storage } from '../webapi'
+export let storage: {
+  get: (name: string) => Promise<any>
+  set: (name: string, obj: object) => Promise<void>
+}
+
+export const initPersistStoreStorage = (s: {
+  get: (name: string) => Promise<any>
+  set: (name: string, obj: object) => Promise<void>
+}) => {
+  storage = s
+}
 
 const persistStorage = (name: string, obj: object) => {
   debounce(storage.set(name, obj), 1000)

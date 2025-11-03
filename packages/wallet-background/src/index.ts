@@ -25,7 +25,7 @@ export {
 } from './services'
 
 // webapi
-export { storage, notification } from './webapi'
+export { notification } from './webapi'
 
 // Integration bridge for unisat-extension
 export * from './integration/extension-bridge'
@@ -39,3 +39,5 @@ export { namesUtils } from './utils/names-utils'
 
 // Re-export commonly used types
 export type { BackgroundManagerConfig, BackgroundManagerEvents } from './background-manager'
+
+export { initPersistStoreStorage } from './utils/persistStore'

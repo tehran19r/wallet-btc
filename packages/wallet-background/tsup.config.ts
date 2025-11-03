@@ -1,13 +1,16 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/types/index.ts'],
+  entry: {
+    index: 'src/index.ts',
+    types: 'src/types/index.ts',
+  },
   format: ['cjs', 'esm'],
   dts: true, // Temporarily disable type generation to focus on functionality completion
+  splitting: false,
+  sourcemap: true,
   clean: true,
   outDir: 'lib',
-  sourcemap: true,
-  splitting: false,
   minify: false,
   treeshake: true,
   external: [

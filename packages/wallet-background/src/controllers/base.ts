@@ -2,16 +2,16 @@
  * Base controller class for all wallet controllers
  */
 
-import { EventEmitter } from 'eventemitter3';
-import type { BackgroundManagerConfig } from '../background-manager';
+import { EventEmitter } from 'eventemitter3'
+import type { BackgroundManagerConfig } from '../background-manager'
 
 export abstract class BaseController extends EventEmitter<any> {
-  protected adapters: BackgroundManagerConfig;
-  protected initialized = false;
+  // protected adapters: BackgroundManagerConfig;
+  protected initialized = false
 
-  constructor(adapters: BackgroundManagerConfig) {
-    super();
-    this.adapters = adapters;
+  constructor(/* adapters: BackgroundManagerConfig */) {
+    super()
+    // this.adapters = adapters;
   }
 
   /**
@@ -19,37 +19,37 @@ export abstract class BaseController extends EventEmitter<any> {
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
-      return;
+      return
     }
 
-    await this.onInitialize();
-    this.initialized = true;
+    await this.onInitialize()
+    this.initialized = true
   }
 
   /**
    * Check if controller is initialized
    */
   isInitialized(): boolean {
-    return this.initialized;
+    return this.initialized
   }
 
   /**
    * Cleanup controller resources
    */
   async cleanup(): Promise<void> {
-    await this.onCleanup();
-    this.initialized = false;
+    await this.onCleanup()
+    this.initialized = false
   }
 
   /**
    * Override this method to implement initialization logic
    */
-  protected abstract onInitialize(): Promise<void>;
+  protected abstract onInitialize(): Promise<void>
 
   /**
    * Override this method to implement cleanup logic
    */
-  protected abstract onCleanup(): Promise<void>;
+  protected abstract onCleanup(): Promise<void>
 }
 
-export default BaseController;
+export default BaseController

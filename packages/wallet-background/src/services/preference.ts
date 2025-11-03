@@ -13,7 +13,6 @@ import { ChainType, NetworkType } from '@unisat/wallet-types'
  */
 class PreferenceServiceWrapper extends PreferenceService {
   constructor() {
-    const storage = new ExtensionStorageAdapter()
     const template: BasePreferenceStore = {
       currentKeyringIndex: 0,
       currentAccount: undefined,
@@ -48,14 +47,19 @@ class PreferenceServiceWrapper extends PreferenceService {
       autoLockTimeId: 3,
       openInSidePanel: false,
       developerMode: false,
+      rateUsStatus: {
+        hasRated: false,
+        ratePromptDismissedAt: 0,
+        hasShownSecondPrompt: false,
+      },
     }
 
     // Call parent constructor with extension-compatible storage
     super({
-      storage: storage,
       logger,
       t: t,
       template,
+      storage: null as any,
     })
   }
 }

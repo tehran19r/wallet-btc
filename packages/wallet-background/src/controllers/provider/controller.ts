@@ -25,6 +25,14 @@ import {
 import { NETWORK_TYPES, CHAINS, CHAINS_MAP, VERSION } from '@unisat/wallet-shared'
 
 class ProviderController extends BaseController {
+  protected override onInitialize(): Promise<void> {
+    return Promise.resolve()
+  }
+
+  protected override onCleanup(): Promise<void> {
+    return Promise.resolve()
+  }
+
   requestAccounts = async ({ session: { origin } }) => {
     if (!permissionService.hasPermission(origin)) {
       throw new Error('Permission denied')
@@ -487,7 +495,7 @@ class ProviderController extends BaseController {
     data: {
       params: { chainId },
     },
-  }) => {
+  }): Promise<any> => {
     const cosmosKeyring = await wallet.getCosmosKeyring(chainId)
     if (!cosmosKeyring) {
       return null

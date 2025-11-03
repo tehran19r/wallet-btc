@@ -12,7 +12,14 @@ import {
   walletApiService,
 } from '../services'
 import { psbtFromString } from '../utils/psbt-utils'
-import { AUTO_LOCK_TIMES, CHAINS_MAP, DEFAULT_LOCKTIME_ID, EVENTS } from '@unisat/wallet-shared'
+import {
+  AUTO_LOCK_TIMES,
+  CAT_VERSION,
+  CHAINS_MAP,
+  DEFAULT_LOCKTIME_ID,
+  EVENTS,
+  RateUsStatus,
+} from '@unisat/wallet-shared'
 import eventBus from '../shared/eventBus'
 import {
   Account,
@@ -41,7 +48,6 @@ import { ColdWalletKeyring, KeystoneKeyring } from '@unisat/keyring-service'
 import { DisplayedKeyring, Keyring, KeyringType, ToSignInput } from '@unisat/keyring-service/types'
 import * as txHelpers from '@unisat/tx-helpers'
 import { signMessageOfBIP322Simple, UnspentOutput } from '@unisat/tx-helpers'
-import { CAT_VERSION } from '@unisat/wallet-api'
 import {
   bitcoin,
   eccManager,
@@ -243,6 +249,14 @@ export class WalletController extends BaseController {
   /* keyrings */
 
   clearKeyrings = () => keyringService.clearKeyrings()
+
+  resetAllData = async () => {
+    keyringService.resetAllData()
+    await preferenceService.resetAllData()
+    await permissionService.resetAllData()
+    await contactBookService.resetAllData()
+    //openapiService.setHost(OPENAPI_URL_MAINNET);
+  }
 
   getPrivateKey = async (password: string, { pubkey, type }: { pubkey: string; type: string }) => {
     await this.verifyPassword(password)
@@ -858,11 +872,14 @@ export class WalletController extends BaseController {
     contactBookService.updateContact(data)
   }
 
-  getContactByAddress = (address: string) => {
+  getContactByAddress = (address: string): ContactBookItem | undefined => {
     return contactBookService.getContactByAddress(address)
   }
 
-  getContactByAddressAndChain = (address: string, chain: ChainType) => {
+  getContactByAddressAndChain = (
+    address: string,
+    chain: ChainType
+  ): ContactBookItem | undefined => {
     return contactBookService.getContactByAddressAndChain(address, chain)
   }
 
@@ -882,7 +899,7 @@ export class WalletController extends BaseController {
     }
   }
 
-  listContact = (includeAlias = true) => {
+  listContact = (includeAlias = true): ContactBookItem[] => {
     const list = contactBookService.listContacts()
     if (includeAlias) {
       return list
@@ -891,7 +908,7 @@ export class WalletController extends BaseController {
     }
   }
 
-  listContacts = () => {
+  listContacts = (): ContactBookItem[] => {
     return contactBookService.listContacts()
   }
 
@@ -899,7 +916,7 @@ export class WalletController extends BaseController {
     return contactBookService.saveContactsOrder(contacts)
   }
 
-  getContactsByMap = () => {
+  getContactsByMap = (): Record<string, ContactBookItem> => {
     return contactBookService.getContactsByMap()
   }
 
@@ -915,7 +932,7 @@ export class WalletController extends BaseController {
     return preferenceService.updateWalletSavedList(list)
   }
 
-  getAllAlianName = () => {
+  getAllAlianName = (): (ContactBookItem | undefined)[] => {
     return contactBookService.listAlias()
   }
 
@@ -1052,7 +1069,7 @@ export class WalletController extends BaseController {
       btcUtxos = await this.getBTCUtxos()
     }
 
-    if (btcUtxos.length == 0) {
+    if (btcUtxos!.length == 0) {
       throw new Error('Insufficient balance.')
     }
 
@@ -1061,7 +1078,7 @@ export class WalletController extends BaseController {
     }
 
     const { psbt, toSignInputs } = await txHelpers.sendBTC({
-      btcUtxos: btcUtxos,
+      btcUtxos: btcUtxos!,
       tos: [{ address: to, satoshis: amount }],
       networkType,
       changeAddress: account.address,
@@ -1094,12 +1111,12 @@ export class WalletController extends BaseController {
       btcUtxos = await this.getBTCUtxos()
     }
 
-    if (btcUtxos.length == 0) {
+    if (btcUtxos!.length == 0) {
       throw new Error('Insufficient balance.')
     }
 
     const { psbt, toSignInputs } = await txHelpers.sendAllBTC({
-      btcUtxos: btcUtxos,
+      btcUtxos: btcUtxos!,
       toAddress: to,
       networkType,
       feeRate,
@@ -1139,7 +1156,7 @@ export class WalletController extends BaseController {
       btcUtxos = await this.getBTCUtxos()
     }
 
-    if (btcUtxos.length == 0) {
+    if (btcUtxos!.length == 0) {
       throw new Error('Insufficient balance.')
     }
 
@@ -1149,7 +1166,7 @@ export class WalletController extends BaseController {
 
     const { psbt, toSignInputs } = await txHelpers.sendInscription({
       assetUtxo,
-      btcUtxos,
+      btcUtxos: btcUtxos!,
       toAddress: to,
       networkType,
       changeAddress: account.address,
@@ -1210,13 +1227,13 @@ export class WalletController extends BaseController {
       btcUtxos = await this.getBTCUtxos()
     }
 
-    if (btcUtxos.length == 0) {
+    if (btcUtxos!.length == 0) {
       throw new Error('Insufficient balance.')
     }
 
     const { psbt, toSignInputs } = await txHelpers.sendInscriptions({
       assetUtxos,
-      btcUtxos,
+      btcUtxos: btcUtxos!,
       toAddress: to,
       networkType,
       changeAddress: account.address,
@@ -1259,7 +1276,7 @@ export class WalletController extends BaseController {
 
     const { psbt, toSignInputs, splitedCount } = await txHelpers.splitInscriptionUtxo({
       assetUtxo,
-      btcUtxos,
+      btcUtxos: btcUtxos!,
       networkType,
       changeAddress: account.address,
       feeRate,
@@ -1509,14 +1526,14 @@ export class WalletController extends BaseController {
     return data
   }
 
-  getConnectedSites = () => {
+  getConnectedSites = (): ConnectedSite[] => {
     const data = permissionService.getConnectedSites()
     return data
   }
   setRecentConnectedSites = (sites: ConnectedSite[]) => {
     permissionService.setRecentConnectedSites(sites)
   }
-  getRecentConnectedSites = () => {
+  getRecentConnectedSites = (): ConnectedSite[] => {
     return permissionService.getRecentConnectedSites()
   }
   getCurrentSite = (tabId: number): ConnectedSite | null => {
@@ -1538,7 +1555,7 @@ export class WalletController extends BaseController {
       isTop: false,
     }
   }
-  getCurrentConnectedSite = (tabId: number) => {
+  getCurrentConnectedSite = (tabId: number): ConnectedSite | undefined => {
     const { origin } = sessionService.getSession(tabId) || {}
     return permissionService.getWithoutUpdate(origin!)
   }
@@ -2015,7 +2032,7 @@ export class WalletController extends BaseController {
     const { psbt, toSignInputs } = await txHelpers.sendRunes({
       assetUtxos,
       assetAddress: account.address,
-      btcUtxos,
+      btcUtxos: btcUtxos!,
       btcAddress: account.address,
       toAddress: to,
       networkType,
@@ -2788,5 +2805,34 @@ export class WalletController extends BaseController {
       list,
     }
   }
+
+  // Rate Us Status
+  getRateUsStatus = (): RateUsStatus => {
+    return preferenceService.getRateUsStatus()
+  }
+
+  setHasRated = (hasRated: boolean) => {
+    return preferenceService.setHasRated(hasRated)
+  }
+
+  setRatePromptDismissedAt = (timestamp: number | null) => {
+    return preferenceService.setRatePromptDismissedAt(timestamp)
+  }
+
+  setHasShownSecondPrompt = (hasShown: boolean) => {
+    return preferenceService.setHasShownSecondPrompt(hasShown)
+  }
+
+  resetRateUsStatus = () => {
+    return preferenceService.resetRateUsStatus()
+  }
+
+  getGuideReaded = () => {
+    return preferenceService.getGuideReaded()
+  }
+
+  setGuideReaded = () => {
+    preferenceService.setGuideReaded(true)
+  }
 }
-export default new WalletController({} as any)
+export default new WalletController()
