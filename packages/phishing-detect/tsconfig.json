@@ -3,9 +3,10 @@
   "compilerOptions": {
     "outDir": "./lib",
     "rootDir": "./src",
-    "composite": true,
+    "baseUrl": "./src",
     "declaration": true,
     "declarationMap": true,
+    "sourceMap": true,
     "skipLibCheck": true,
     "strict": true,
     "allowJs": true,

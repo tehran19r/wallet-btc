@@ -41,7 +41,7 @@ export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
     this.logger = config.logger || console
     this.t = config.t || ((key: string) => key)
     this.eventBus = config.eventBus
-    this.template = config.template
+    this.template = config.template!
     this.supportedLocales = SUPPORTED_LOCALES
     this.platformDefaults = config.platformDefaults || {}
     this.getBrowserLanguages = config.getBrowserLanguages || undefined
@@ -49,6 +49,10 @@ export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
     // Setup migration manager
     this.migrationManager = new MigrationManager()
     commonMigrations.forEach(migration => this.migrationManager.addMigration(migration))
+  }
+
+  init0(config: PreferenceServiceConfig) {
+    this.storage = config.storage
   }
 
   /**
@@ -175,6 +179,18 @@ export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
       // Old version account format, reset
       this.store.currentAccount = undefined
     }
+
+    if (!this.store.rateUsStatus) {
+      this.store.rateUsStatus = {
+        hasRated: false,
+        ratePromptDismissedAt: null,
+        hasShownSecondPrompt: false,
+      }
+    }
+  }
+
+  resetAllData = () => {
+    return this.init(true)
   }
 
   /**
@@ -578,6 +594,40 @@ export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
     this.store.addressSummary = {
       ...summaryMap,
       [address]: summary,
+    }
+  }
+
+  // Rate Us Status
+  getRateUsStatus = () => {
+    return this.store.rateUsStatus
+  }
+
+  setHasRated = (hasRated: boolean) => {
+    this.store.rateUsStatus = {
+      ...this.store.rateUsStatus,
+      hasRated,
+    }
+  }
+
+  setRatePromptDismissedAt = (timestamp: number | null) => {
+    this.store.rateUsStatus = {
+      ...this.store.rateUsStatus,
+      ratePromptDismissedAt: timestamp,
+    }
+  }
+
+  setHasShownSecondPrompt = (hasShown: boolean) => {
+    this.store.rateUsStatus = {
+      ...this.store.rateUsStatus,
+      hasShownSecondPrompt: hasShown,
+    }
+  }
+
+  resetRateUsStatus = () => {
+    this.store.rateUsStatus = {
+      hasRated: false,
+      ratePromptDismissedAt: null,
+      hasShownSecondPrompt: false,
     }
   }
 

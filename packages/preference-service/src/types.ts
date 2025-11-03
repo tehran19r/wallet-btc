@@ -104,6 +104,15 @@ export interface BasePreferenceStore {
   addressSummary?: {
     [address: string]: AddressSummary
   }
+
+  // Mobile-specific fields (optional)
+  rateUsStatus: RateUsStatus
+}
+
+export interface RateUsStatus {
+  hasRated: boolean
+  ratePromptDismissedAt: number | null
+  hasShownSecondPrompt: boolean
 }
 
 // Extension-specific additions
@@ -134,7 +143,7 @@ export interface PreferenceServiceConfig {
   logger?: any
   t?: any
   eventBus?: EventEmitter
-  template: BasePreferenceStore
+  template?: BasePreferenceStore
   supportedLocales?: string[]
   platformDefaults?: Partial<BasePreferenceStore>
   getBrowserLanguages?: () => Promise<string[]>
