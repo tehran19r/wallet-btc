@@ -1,7 +1,7 @@
 import logger from 'loglevel'
 
-import { t } from '@unisat/i18n'
 import { ExtensionAdapter, PhishingAdapter, PhishingService } from '@unisat/phishing-detect'
+import { t } from '@unisat/wallet-shared'
 
 /**
  * Phishing detection service - extends the base PhishingService with extension-specific functionality

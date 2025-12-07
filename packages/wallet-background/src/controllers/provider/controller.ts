@@ -22,7 +22,13 @@ import {
   arbitrarySignDocToBytesHex,
   directSignDocToBytesHex,
 } from '@unisat/babylon-service'
-import { NETWORK_TYPES, CHAINS, CHAINS_MAP, VERSION } from '@unisat/wallet-shared'
+import {
+  NETWORK_TYPES,
+  CHAINS,
+  CHAINS_MAP,
+  PlatformEnv,
+  SESSION_EVENTS,
+} from '@unisat/wallet-shared'
 
 class ProviderController extends BaseController {
   protected override onInitialize(): Promise<void> {
@@ -40,12 +46,12 @@ class ProviderController extends BaseController {
 
     const _account = await wallet.getCurrentAccount()
     const account = _account ? [_account.address] : []
-    sessionService.broadcastEvent('accountsChanged', account)
+    sessionService.broadcastEvent(SESSION_EVENTS.accountsChanged, account)
     const connectSite = permissionService.getConnectedSite(origin)
     if (connectSite) {
       const network = wallet.getLegacyNetworkName()
       sessionService.broadcastEvent(
-        'networkChanged',
+        SESSION_EVENTS.networkChanged,
         {
           network,
         },
@@ -439,7 +445,7 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('SAFE', true)
   getVersion = async () => {
-    return VERSION
+    return PlatformEnv.VERSION
   }
 
   @Reflect.metadata('SAFE', true)

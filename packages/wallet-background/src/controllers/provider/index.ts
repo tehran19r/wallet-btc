@@ -1,15 +1,10 @@
 // Provider controller for handling RPC requests
-import { WalletError, ErrorCodes } from '../../utils/error'
+import { ErrorCodes, WalletError } from '@unisat/wallet-shared'
+import { keyringService } from '../../services'
 import internalMethod from './internalMethod'
 import rpcFlow from './rpcFlow'
 
 class ProviderController {
-  private services: any = {}
-
-  setServices(services: any) {
-    this.services = services
-  }
-
   async handleRequest(req: any) {
     const {
       data: { method },
@@ -19,7 +14,7 @@ class ProviderController {
       return internalMethod[method](req)
     }
 
-    const hasVault = this.services.keyring?.hasVault()
+    const hasVault = keyringService.hasVault()
     if (!hasVault) {
       throw new WalletError(ErrorCodes.UserCancel, 'wallet must has at least one account')
     }

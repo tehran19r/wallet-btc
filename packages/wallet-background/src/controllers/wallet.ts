@@ -3,39 +3,6 @@ import { pubkeyInScript } from 'bitcoinjs-lib/src/psbt/psbtutils.js'
 import bitcore from 'bitcore-lib'
 
 import {
-  contactBookService,
-  keyringService,
-  notificationService,
-  permissionService,
-  preferenceService,
-  sessionService,
-  walletApiService,
-} from '../services'
-import { psbtFromString } from '../utils/psbt-utils'
-import {
-  AUTO_LOCK_TIMES,
-  CAT_VERSION,
-  CHAINS_MAP,
-  DEFAULT_LOCKTIME_ID,
-  EVENTS,
-  RateUsStatus,
-} from '@unisat/wallet-shared'
-import eventBus from '../shared/eventBus'
-import {
-  Account,
-  AddressUserToSignInput,
-  BitcoinBalance,
-  BRC20HistoryItem,
-  CosmosBalance,
-  CosmosSignDataType,
-  NetworkType,
-  PublicKeyUserToSignInput,
-  SignPsbtOptions,
-  UTXO,
-  WalletKeyring,
-} from '../shared/types'
-import { getChainInfo } from '../shared/utils'
-import {
   BabylonConfigV2,
   COSMOS_CHAINS_MAP,
   CosmosChainInfo,
@@ -43,7 +10,6 @@ import {
   DelegationV2StakingState,
   getDelegationsV2,
 } from '@unisat/babylon-service'
-import { t } from '@unisat/i18n'
 import { ColdWalletKeyring, KeystoneKeyring } from '@unisat/keyring-service'
 import { DisplayedKeyring, Keyring, KeyringType, ToSignInput } from '@unisat/keyring-service/types'
 import * as txHelpers from '@unisat/tx-helpers'
@@ -60,11 +26,46 @@ import {
   toXOnly,
   UTXO_DUST,
 } from '@unisat/wallet-bitcoin'
+import {
+  bgI18n,
+  BUS_EVENTS,
+  BUS_METHODS,
+  CAT_VERSION,
+  CHAINS_MAP,
+  ConnectedSite,
+  getLockTimeInfo,
+  PlatformEnv,
+  RateUsStatus,
+  SESSION_EVENTS,
+  t,
+} from '@unisat/wallet-shared'
 import { AddressType, ChainType } from '@unisat/wallet-types'
+import {
+  contactBookService,
+  keyringService,
+  notificationService,
+  permissionService,
+  preferenceService,
+  sessionService,
+  walletApiService,
+} from '../services'
+import {
+  Account,
+  AddressUserToSignInput,
+  BitcoinBalance,
+  BRC20HistoryItem,
+  CosmosBalance,
+  CosmosSignDataType,
+  NetworkType,
+  PublicKeyUserToSignInput,
+  SignPsbtOptions,
+  UTXO,
+  WalletKeyring,
+} from '../shared/types'
+import { getChainInfo } from '../shared/utils'
+import { bgEventBus } from '../utils/eventBus'
+import { psbtFromString } from '../utils/psbt-utils'
 
-import { ContactBookItem } from '../services/contactBook'
-import { ConnectedSite } from '../services/permission'
-import BaseController from './base'
 import { bnUtils } from '@unisat/base-utils'
 import {
   ADDRESS_TYPES,
@@ -73,6 +74,9 @@ import {
   KEYRING_TYPES,
   NETWORK_TYPES,
 } from '@unisat/wallet-shared'
+import log from 'loglevel'
+import { ContactBookItem } from '../services/contactBook'
+import BaseController from './base'
 
 export type AccountAsset = {
   name: string
@@ -118,11 +122,17 @@ export class WalletController extends BaseController {
     return Promise.resolve()
   }
 
+  getDesc = () => {
+    return 'desc_test'
+  }
+
   /* wallet */
   boot = (password: string) => keyringService.boot(password)
-  isBooted = () => keyringService.isBooted()
+  isBooted = async () => keyringService.isBooted()
 
-  getApproval = notificationService.getApproval
+  getApproval = async () => {
+    return notificationService.getApproval()
+  }
   resolveApproval = notificationService.resolveApproval
   rejectApproval = notificationService.rejectApproval
 
@@ -143,7 +153,7 @@ export class WalletController extends BaseController {
     const alianNameInited = preferenceService.getInitAlianNameStatus()
     const alianNames = contactBookService.listAlias()
     await keyringService.submitPassword(password)
-    sessionService.broadcastEvent('unlock')
+    sessionService.broadcastEvent(SESSION_EVENTS.unlock)
     if (!alianNameInited && alianNames.length === 0) {
       this.initAlianNames()
     }
@@ -156,10 +166,10 @@ export class WalletController extends BaseController {
 
   lockWallet = async () => {
     await keyringService.setLocked()
-    sessionService.broadcastEvent('accountsChanged', [])
-    sessionService.broadcastEvent('lock')
-    eventBus.emit(EVENTS.broadcastToUI, {
-      method: 'lock',
+    sessionService.broadcastEvent(SESSION_EVENTS.accountsChanged, [])
+    sessionService.broadcastEvent(SESSION_EVENTS.lock)
+    bgEventBus.emit(BUS_EVENTS.broadcastToUI, {
+      method: BUS_METHODS.LOCKED,
       params: {},
     })
   }
@@ -234,8 +244,13 @@ export class WalletController extends BaseController {
     return preferenceService.getLocale()
   }
 
-  setLocale = (locale: string) => {
+  setLocale = async (locale: string) => {
     preferenceService.setLocale(locale)
+    await bgI18n.changeLanguage(locale)
+    bgEventBus.emit(BUS_EVENTS.broadcastToUI, {
+      method: BUS_METHODS.LOCALE_CHANGED,
+      params: locale,
+    })
   }
 
   getCurrency = () => {
@@ -251,15 +266,20 @@ export class WalletController extends BaseController {
   clearKeyrings = () => keyringService.clearKeyrings()
 
   resetAllData = async () => {
-    keyringService.resetAllData()
+    await keyringService.resetAllData()
     await preferenceService.resetAllData()
     await permissionService.resetAllData()
     await contactBookService.resetAllData()
-    //openapiService.setHost(OPENAPI_URL_MAINNET);
+    await walletApiService.resetAllData()
+
+    this._resetTimeout()
   }
 
   getPrivateKey = async (password: string, { pubkey, type }: { pubkey: string; type: string }) => {
-    await this.verifyPassword(password)
+    const isValidPassword = await this.verifyPassword(password)
+    if (!isValidPassword) {
+      throw new Error(t('password_error'))
+    }
     const keyring = await keyringService.getKeyringForAccount(pubkey, type)
     if (!keyring) return null
     const privateKey = await keyring.exportAccount(pubkey)
@@ -276,7 +296,20 @@ export class WalletController extends BaseController {
   }
 
   getMnemonics = async (password: string, keyring: WalletKeyring) => {
-    await this.verifyPassword(password)
+    const isValidPassword = await this.verifyPassword(password)
+    if (!isValidPassword) {
+      throw new Error(t('password_error'))
+    }
+    const originKeyring = keyringService.keyrings[keyring.index]!
+    const serialized = await originKeyring.serialize()
+    return {
+      mnemonic: serialized.mnemonic,
+      hdPath: serialized.hdPath,
+      passphrase: serialized.passphrase,
+    }
+  }
+
+  getMnemonicsForBackup = async (keyring: WalletKeyring) => {
     const originKeyring = keyringService.keyrings[keyring.index]!
     const serialized = await originKeyring.serialize()
     return {
@@ -295,7 +328,7 @@ export class WalletController extends BaseController {
     try {
       originKeyring = await keyringService.importPrivateKey(data, addressType)
     } catch (e) {
-      console.log(e)
+      log.error(e)
       throw e
     }
 
@@ -312,7 +345,9 @@ export class WalletController extends BaseController {
   }
 
   getPreMnemonics = () => keyringService.getPreMnemonics()
-  generatePreMnemonic = () => keyringService.generatePreMnemonic()
+  generatePreMnemonic = async () => {
+    return await keyringService.generatePreMnemonic()
+  }
   removePreMnemonics = () => keyringService.removePreMnemonics()
   createKeyringWithMnemonics = async (
     mnemonic: string,
@@ -339,6 +374,7 @@ export class WalletController extends BaseController {
       displayedKeyring,
       keyringService.keyrings.length - 1
     )
+
     await this.changeKeyring(keyring)
   }
 
@@ -354,6 +390,57 @@ export class WalletController extends BaseController {
       activeIndexes.push(i)
     }
     const originKeyring = keyringService.createTmpKeyring('HD Key Tree', {
+      mnemonic,
+      activeIndexes,
+      hdPath,
+      passphrase,
+    })
+    const displayedKeyring = await keyringService.displayForKeyring(originKeyring, addressType, -1)
+    return this.displayedKeyringToWalletKeyring(displayedKeyring, -1, false)
+  }
+
+  createTmpKeyringWithMnemonics2 = async (
+    mnemonic: string,
+    passphrase: string,
+    hdPaths: string[],
+    addressTypes: AddressType[]
+  ) => {
+    const keyrings: WalletKeyring[] = []
+    const activeIndexes: number[] = [0]
+    let originKeyring
+    for (let i = 0; i < hdPaths.length; i++) {
+      if (!originKeyring) {
+        originKeyring = await keyringService.createTmpKeyring('HD Key Tree', {
+          mnemonic,
+          activeIndexes,
+          hdPath: hdPaths[0],
+          passphrase,
+        })
+      }
+      originKeyring.changeHdPath(hdPaths[i])
+      const displayedKeyring = await keyringService.displayForKeyring(
+        originKeyring,
+        addressTypes[i]!,
+        -1
+      )
+      const keyring = this.displayedKeyringToWalletKeyring(displayedKeyring, -1, false)
+      keyrings.push(keyring)
+    }
+    return keyrings
+  }
+
+  createTmpKeyringWithMnemonicsScan = async (
+    mnemonic: string,
+    hdPath: string,
+    passphrase: string,
+    addressType: AddressType,
+    accountCount = 1
+  ) => {
+    const activeIndexes: number[] = []
+    for (let i = 0; i < accountCount; i++) {
+      activeIndexes.push(i)
+    }
+    const originKeyring = await keyringService.createTmpKeyring('HD Key Tree', {
       mnemonic,
       activeIndexes,
       hdPath,
@@ -544,32 +631,27 @@ export class WalletController extends BaseController {
 
   changeKeyring = async (keyring: WalletKeyring, accountIndex = 0) => {
     preferenceService.setCurrentKeyringIndex(keyring.index)
-    preferenceService.setCurrentAccount(keyring.accounts[accountIndex] as any)
-    const flag = preferenceService.getAddressFlag(keyring.accounts[accountIndex]!.address)
-    walletApiService.setClientAddress(keyring.accounts[accountIndex]!.address, flag)
-  }
+    const account = keyring.accounts[accountIndex]!
+    preferenceService.setCurrentAccount(account)
+    if (account) {
+      sessionService.broadcastEvent(SESSION_EVENTS.accountsChanged, [account.address])
 
-  getAllAddresses = (keyring: WalletKeyring, index: number) => {
-    const networkType = this.getNetworkType()
-    const addresses: string[] = []
-    const _keyring = keyringService.keyrings[keyring.index]!
-    if (keyring.type === KeyringType.HdKeyring || keyring.type === KeyringType.KeystoneKeyring) {
-      const pathPubkey: { [path: string]: string } = {}
-      ADDRESS_TYPES.filter(v => v.displayIndex >= 0).forEach(v => {
-        let pubkey = pathPubkey[v.hdPath]
-        if (!pubkey && _keyring.getAccountByHdPath) {
-          pubkey = _keyring.getAccountByHdPath(v.hdPath, index)
-        }
-        const address = publicKeyToAddress(pubkey!, v.value, networkType)
-        addresses.push(address)
-      })
-    } else {
-      ADDRESS_TYPES.filter(v => v.displayIndex >= 0 && v.isUnisatLegacy === false).forEach(v => {
-        const pubkey = keyring.accounts[index]!.pubkey
-        const address = publicKeyToAddress(pubkey, v.value, networkType)
-        addresses.push(address)
+      bgEventBus.emit(BUS_EVENTS.broadcastToUI, {
+        method: BUS_METHODS.ACCOUNTS_CHANGED,
+        params: account,
       })
     }
+
+    const flag = preferenceService.getAddressFlag(keyring.accounts[accountIndex]!.address)
+    walletApiService.setClientAddress(keyring.accounts[accountIndex]!.address)
+  }
+
+  getAllAddresses = async (keyring: WalletKeyring, index: number) => {
+    const networkType = this.getNetworkType()
+    const pubkeys = await keyringService.getAllPubkeysByDerivedIndex(keyring, index)
+    const addresses = pubkeys.map(v => {
+      return publicKeyToAddress(v.pubkey, v.type, networkType)
+    })
     return addresses
   }
 
@@ -841,6 +923,10 @@ export class WalletController extends BaseController {
   }
 
   signMessage = async (text: string) => {
+    if (!text || text.length > 10000) {
+      throw new Error('Invalid message length')
+    }
+
     const account = preferenceService.getCurrentAccount()
     if (!account) throw new Error('no current account')
     return keyringService.signMessage(account.pubkey, account.type, text)
@@ -994,7 +1080,7 @@ export class WalletController extends BaseController {
     }
 
     preferenceService.setChainType(chainType)
-    walletApiService.setEndpoints(CHAINS_MAP[chainType]!.endpoints)
+    walletApiService.setEndpoint(CHAINS_MAP[chainType]!.endpoints[0]!)
 
     const currentAccount = await this.getCurrentAccount()
     const keyring = await this.getCurrentKeyring()
@@ -1002,15 +1088,15 @@ export class WalletController extends BaseController {
     this.changeKeyring(keyring, currentAccount?.index)
 
     const chainInfo = getChainInfo(chainType)
-    sessionService.broadcastEvent('chainChanged', chainInfo)
+    sessionService.broadcastEvent(SESSION_EVENTS.chainChanged, chainInfo)
 
     const network = this.getLegacyNetworkName()
-    sessionService.broadcastEvent('networkChanged', {
+    sessionService.broadcastEvent(SESSION_EVENTS.networkChanged, {
       network,
     })
 
-    eventBus.emit(EVENTS.broadcastToUI, {
-      method: 'chainChanged',
+    bgEventBus.emit(BUS_EVENTS.broadcastToUI, {
+      method: BUS_METHODS.CHAIN_CHANGED,
       params: {
         type: chainType,
       },
@@ -1047,7 +1133,6 @@ export class WalletController extends BaseController {
     to,
     amount,
     feeRate,
-    enableRBF,
     btcUtxos,
     memo,
     memos,
@@ -1055,7 +1140,6 @@ export class WalletController extends BaseController {
     to: string
     amount: number
     feeRate: number
-    enableRBF: boolean
     btcUtxos?: UnspentOutput[]
     memo?: string
     memos?: string[]
@@ -1083,7 +1167,6 @@ export class WalletController extends BaseController {
       networkType,
       changeAddress: account.address,
       feeRate,
-      enableRBF,
       memo: memo!,
       memos: memos!,
     })
@@ -1094,12 +1177,10 @@ export class WalletController extends BaseController {
   sendAllBTC = async ({
     to,
     feeRate,
-    enableRBF,
     btcUtxos,
   }: {
     to: string
     feeRate: number
-    enableRBF: boolean
     btcUtxos?: UnspentOutput[]
   }) => {
     const account = preferenceService.getCurrentAccount()
@@ -1120,7 +1201,6 @@ export class WalletController extends BaseController {
       toAddress: to,
       networkType,
       feeRate,
-      enableRBF,
     })
     return this.getSignedResult(psbt, toSignInputs)
   }
@@ -1130,14 +1210,12 @@ export class WalletController extends BaseController {
     inscriptionId,
     feeRate,
     outputValue,
-    enableRBF,
     btcUtxos,
   }: {
     to: string
     inscriptionId: string
     feeRate: number
     outputValue?: number
-    enableRBF: boolean
     btcUtxos?: txHelpers.UnspentOutput[]
   }) => {
     const account = preferenceService.getCurrentAccount()
@@ -1172,7 +1250,6 @@ export class WalletController extends BaseController {
       changeAddress: account.address,
       feeRate,
       outputValue: outputValue || assetUtxo.satoshis,
-      enableRBF,
       enableMixed: true,
     })
 
@@ -1183,14 +1260,12 @@ export class WalletController extends BaseController {
     to,
     inscriptionIds,
     feeRate,
-    enableRBF,
     btcUtxos,
   }: {
     to: string
     inscriptionIds: string[]
     utxos: UTXO[]
     feeRate: number
-    enableRBF: boolean
     btcUtxos?: txHelpers.UnspentOutput[]
   }) => {
     const account = preferenceService.getCurrentAccount()
@@ -1198,9 +1273,8 @@ export class WalletController extends BaseController {
 
     const networkType = this.getNetworkType()
 
-    const inscription_utxos = await walletApiService.inscriptions.getInscriptionUtxos(
-      inscriptionIds
-    )
+    const inscription_utxos =
+      await walletApiService.inscriptions.getInscriptionUtxos(inscriptionIds)
     if (!inscription_utxos) {
       throw new Error('UTXO not found.')
     }
@@ -1238,7 +1312,6 @@ export class WalletController extends BaseController {
       networkType,
       changeAddress: account.address,
       feeRate,
-      enableRBF,
     })
 
     return this.getSignedResult(psbt, toSignInputs)
@@ -1248,14 +1321,12 @@ export class WalletController extends BaseController {
     inscriptionId,
     feeRate,
     outputValue,
-    enableRBF,
     btcUtxos,
   }: {
     to: string
     inscriptionId: string
     feeRate: number
     outputValue: number
-    enableRBF: boolean
     btcUtxos?: txHelpers.UnspentOutput[]
   }) => {
     const account = preferenceService.getCurrentAccount()
@@ -1280,7 +1351,6 @@ export class WalletController extends BaseController {
       networkType,
       changeAddress: account.address,
       feeRate,
-      enableRBF,
       outputValue,
     })
 
@@ -1396,6 +1466,11 @@ export class WalletController extends BaseController {
     return keyrings
   }
 
+  getTotalKeyringCount = async () => {
+    const displayedKeyrings = await keyringService.getAllDisplayedKeyrings()
+    return displayedKeyrings.length
+  }
+
   getCurrentKeyring = async () => {
     let currentKeyringIndex = preferenceService.getCurrentKeyringIndex()
     const displayedKeyrings = await keyringService.getAllDisplayedKeyrings()
@@ -1449,7 +1524,7 @@ export class WalletController extends BaseController {
     }
     if (currentAccount) {
       currentAccount.flag = preferenceService.getAddressFlag(currentAccount.address)
-      walletApiService.setClientAddress(currentAccount.address, currentAccount.flag)
+      walletApiService.setClientAddress(currentAccount.address)
     }
 
     return currentAccount
@@ -1564,7 +1639,7 @@ export class WalletController extends BaseController {
     if (data.isConnected) {
       const network = this.getLegacyNetworkName()
       sessionService.broadcastEvent(
-        'networkChanged',
+        SESSION_EVENTS.networkChanged,
         {
           network,
         },
@@ -1576,7 +1651,7 @@ export class WalletController extends BaseController {
     permissionService.updateConnectSite(origin, data)
     const network = this.getLegacyNetworkName()
     sessionService.broadcastEvent(
-      'networkChanged',
+      SESSION_EVENTS.networkChanged,
       {
         network,
       },
@@ -1585,14 +1660,14 @@ export class WalletController extends BaseController {
   }
 
   removeConnectedSite = (origin: string) => {
-    sessionService.broadcastEvent('accountsChanged', [], origin)
+    sessionService.broadcastEvent(SESSION_EVENTS.accountsChanged, [], origin)
     permissionService.removeConnectedSite(origin)
   }
 
   setKeyringAlianName = (keyring: WalletKeyring, name: string) => {
     preferenceService.setKeyringAlianName(keyring.key, name)
-    keyring.alianName = name
-    return keyring
+    const newKeyring = Object.assign({}, keyring, { alianName: name })
+    return newKeyring
   }
 
   setAccountAlianName = (account: Account, name: string) => {
@@ -1603,17 +1678,21 @@ export class WalletController extends BaseController {
 
   addAddressFlag = (account: Account, flag: AddressFlagType) => {
     account.flag = preferenceService.addAddressFlag(account.address, flag)
-    walletApiService.setClientAddress(account.address, account.flag)
+    walletApiService.setClientAddress(account.address)
     return account
   }
   removeAddressFlag = (account: Account, flag: AddressFlagType) => {
     account.flag = preferenceService.removeAddressFlag(account.address, flag)
-    walletApiService.setClientAddress(account.address, account.flag)
+    walletApiService.setClientAddress(account.address)
     return account
   }
 
   getFeeSummary = async () => {
     return walletApiService.bitcoin.getFeeSummary()
+  }
+
+  getLowFeeSummary = async () => {
+    return walletApiService.bitcoin.getLowFeeSummary()
   }
 
   getCoinPrice = async () => {
@@ -1718,19 +1797,19 @@ export class WalletController extends BaseController {
     }
   }
 
-  expireUICachedData = (address: string) => {
+  expireUICachedData = async (address: string) => {
     return preferenceService.expireUICachedData(address)
   }
 
-  getWalletConfig = () => {
+  getWalletConfig = async () => {
     return walletApiService.config.getWalletConfig()
   }
 
-  getSkippedVersion = () => {
+  getSkippedVersion = async () => {
     return preferenceService.getSkippedVersion()
   }
 
-  setSkippedVersion = (version: string) => {
+  setSkippedVersion = async (version: string) => {
     return preferenceService.setSkippedVersion(version)
   }
 
@@ -1900,8 +1979,13 @@ export class WalletController extends BaseController {
   }
 
   getKeystoneConnectionType = async () => {
-    const { keyring } = await this.checkKeyringMethod('getConnectionType')
-    return keyring.getConnectionType!()
+    if (PlatformEnv.PLATFORM === 'extension') {
+      // QR | USB
+      const { keyring } = await this.checkKeyringMethod('getConnectionType')
+      return keyring.getConnectionType!()
+    } else {
+      return 'QR'
+    }
   }
 
   getEnableSignData = async () => {
@@ -1957,7 +2041,6 @@ export class WalletController extends BaseController {
     runeid,
     runeAmount,
     feeRate,
-    enableRBF,
     btcUtxos,
     assetUtxos,
     outputValue,
@@ -1966,7 +2049,6 @@ export class WalletController extends BaseController {
     runeid: string
     runeAmount: string
     feeRate: number
-    enableRBF: boolean
     btcUtxos?: UnspentOutput[]
     assetUtxos: UnspentOutput[]
     outputValue?: number
@@ -2037,7 +2119,6 @@ export class WalletController extends BaseController {
       toAddress: to,
       networkType,
       feeRate,
-      enableRBF,
       runeid,
       runeAmount,
       outputValue: outputValue || UTXO_DUST,
@@ -2068,28 +2149,28 @@ export class WalletController extends BaseController {
     }
   }
 
-  getAutoLockTimeId = () => {
+  getAutoLockTimeId = async () => {
     return preferenceService.getAutoLockTimeId()
   }
 
-  setAutoLockTimeId = (timeId: number) => {
+  setAutoLockTimeId = async (timeId: number) => {
     preferenceService.setAutoLockTimeId(timeId)
     this._resetTimeout()
   }
 
-  getOpenInSidePanel = () => {
+  getOpenInSidePanel = async () => {
     return preferenceService.getOpenInSidePanel()
   }
 
-  getDeveloperMode = () => {
+  getDeveloperMode = async () => {
     return preferenceService.getDeveloperMode()
   }
 
-  setDeveloperMode = (developerMode: boolean) => {
+  setDeveloperMode = async (developerMode: boolean) => {
     preferenceService.setDeveloperMode(developerMode)
   }
 
-  setOpenInSidePanel = (openInSidePanel: boolean) => {
+  setOpenInSidePanel = async (openInSidePanel: boolean) => {
     preferenceService.setOpenInSidePanel(openInSidePanel)
 
     try {
@@ -2102,19 +2183,23 @@ export class WalletController extends BaseController {
     }
   }
 
-  setLastActiveTime = () => {
+  setLastActiveTime = async () => {
     this._resetTimeout()
   }
 
-  _resetTimeout = async () => {
+  private _resetTimeout = () => {
     if (this.timer) {
       clearTimeout(this.timer)
     }
 
     const timeId = preferenceService.getAutoLockTimeId()
-    const timeConfig = AUTO_LOCK_TIMES[timeId] || AUTO_LOCK_TIMES[DEFAULT_LOCKTIME_ID]!
+    const timeConfig = getLockTimeInfo(timeId)
     this.timer = setTimeout(() => {
       this.lockWallet()
+      bgEventBus.emit(BUS_EVENTS.broadcastToUI, {
+        method: BUS_METHODS.AUTO_LOCKED,
+        params: {},
+      })
     }, timeConfig.time)
   }
 
@@ -2600,11 +2685,15 @@ export class WalletController extends BaseController {
     orderId: string
     commitTx: string
     toSignInputs: ToSignInput[]
+    signed?: boolean
   }) => {
     const networkType = this.getNetworkType()
     const psbtNetwork = toPsbtNetwork(networkType)
     const psbt = bitcoin.Psbt.fromHex(params.commitTx, { network: psbtNetwork })
-    await this.signPsbt(psbt, params.toSignInputs, true)
+    if (!params.signed) {
+      // keystone already signed
+      await this.signPsbt(psbt, params.toSignInputs, true)
+    }
 
     return walletApiService.brc20.singleStepTransferBRC20Step2({
       orderId: params.orderId,
@@ -2616,11 +2705,16 @@ export class WalletController extends BaseController {
     orderId: string
     revealTx: string
     toSignInputs: ToSignInput[]
+    signed?: boolean
   }) => {
     const networkType = this.getNetworkType()
     const psbtNetwork = toPsbtNetwork(networkType)
     const psbt = bitcoin.Psbt.fromHex(params.revealTx, { network: psbtNetwork })
-    await this.signPsbt(psbt, params.toSignInputs, true)
+    if (!params.signed) {
+      // keystone already signed
+      await this.signPsbt(psbt, params.toSignInputs, true)
+    }
+
     return walletApiService.brc20.singleStepTransferBRC20Step3({
       orderId: params.orderId,
       psbt: psbt.toBase64(),
@@ -2633,6 +2727,7 @@ export class WalletController extends BaseController {
   ) => {
     const currentAccount = await this.getCurrentAccount()
     if (!currentAccount) {
+      console.error('No current account')
       return
     }
 
@@ -2645,6 +2740,7 @@ export class WalletController extends BaseController {
       )
 
     const psbt = bitcoin.Psbt.fromBase64(psbtBase64)
+    console.log('gogogo', psbt, toSignInputs)
     return this.getSignedResult(psbt, toSignInputs)
   }
   // createBabylonDeposit = async (amount: string) => {};
@@ -2718,7 +2814,6 @@ export class WalletController extends BaseController {
     alkaneid,
     amount,
     feeRate,
-    enableRBF,
     btcUtxos,
     assetUtxos,
   }: {
@@ -2726,7 +2821,6 @@ export class WalletController extends BaseController {
     alkaneid: string
     amount: string
     feeRate: number
-    enableRBF: boolean
     btcUtxos?: UnspentOutput[]
     assetUtxos?: UnspentOutput[]
   }) => {
@@ -2823,16 +2917,28 @@ export class WalletController extends BaseController {
     return preferenceService.setHasShownSecondPrompt(hasShown)
   }
 
-  resetRateUsStatus = () => {
+  resetRateUsStatus = async () => {
     return preferenceService.resetRateUsStatus()
   }
 
-  getGuideReaded = () => {
+  getGuideReaded = async () => {
     return preferenceService.getGuideReaded()
   }
 
-  setGuideReaded = () => {
+  setGuideReaded = async () => {
     preferenceService.setGuideReaded(true)
+  }
+
+  getAnnouncements = async (cursor: number, size: number) => {
+    return walletApiService.utility.getAnnouncements(cursor, size)
+  }
+
+  getAcceptLowFeeMode = async () => {
+    return preferenceService.getAcceptLowFeeMode()
+  }
+
+  setAcceptLowFeeMode = async (accept: boolean) => {
+    preferenceService.setAcceptLowFeeMode(accept)
   }
 }
 export default new WalletController()

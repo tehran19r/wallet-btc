@@ -3,13 +3,10 @@
  */
 
 import { EventEmitter } from 'eventemitter3'
-import type { BackgroundManagerConfig } from '../background-manager'
-
 export abstract class BaseController extends EventEmitter<any> {
-  // protected adapters: BackgroundManagerConfig;
   protected initialized = false
 
-  constructor(/* adapters: BackgroundManagerConfig */) {
+  constructor() {
     super()
     // this.adapters = adapters;
   }

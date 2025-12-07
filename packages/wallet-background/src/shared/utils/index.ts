@@ -6,14 +6,11 @@ declare global {
   const langLocales: Record<string, Record<'message', string>>
 }
 
-// Simple translation function placeholder
-const t = (name: string) => name
-
 const format = (str: string, ...args: any[]) => {
   return args.reduce((m, n) => m.replace('_s_', n), str)
 }
 
-export { format, t }
+export { format }
 
 const chainsDict = keyBy(CHAINS, 'serverId')
 export const getChain = (chainId?: string) => {

@@ -1,9 +1,9 @@
 import permissionService from './permission'
 
 export interface SessionData {
-  origin: string;
-  icon: string;
-  name: string;
+  origin: string
+  icon: string
+  name: string
 }
 
 export class Session {
@@ -78,21 +78,21 @@ const broadcastEvent = (ev: string, data?: any, origin?: string): void => {
 }
 
 class SessionService {
-  getSession = getSession;
-  getOrCreateSession = getOrCreateSession;
-  deleteSession = deleteSession;
-  broadcastEvent = broadcastEvent;
+  getSession = getSession
+  getOrCreateSession = getOrCreateSession
+  deleteSession = deleteSession
+  broadcastEvent = broadcastEvent
 
   async init(): Promise<void> {
-    console.log('[SessionService] Initialized');
+    console.log('[SessionService] Initialized')
   }
 
   async cleanup(): Promise<void> {
-    sessionMap.clear();
+    sessionMap.clear()
   }
 }
 
-export const sessionService = new SessionService();
+export const sessionService = new SessionService()
 
 export default {
   getSession,

@@ -46,4 +46,5 @@ class EventBus {
   }
 }
 
-export default new EventBus()
+const bgEventBus = new EventBus()
+export { bgEventBus }

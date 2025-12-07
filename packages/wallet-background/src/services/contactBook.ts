@@ -1,6 +1,5 @@
-import { createPersistStore } from '../utils'
 import { ChainType } from '@unisat/wallet-types'
-import { ContactBook, ExtensionPersistStoreAdapter } from '@unisat/contact-book'
+import { ContactBookService } from '@unisat/contact-book'
 
 // Export interfaces for compatibility
 export interface ContactBookItem {
@@ -15,22 +14,6 @@ export interface ContactBookItem {
 export interface UIContactBookItem {
   name: string
   address: string
-}
-
-/**
- * ContactBook service - simple wrapper that initializes and exposes the ContactBook instance
- */
-class ContactBookService extends ContactBook {
-  constructor() {
-    // Create storage adapter using the existing createPersistStore
-    const storage = new ExtensionPersistStoreAdapter(createPersistStore, 'contactBook')
-
-    // Call parent constructor with extension-compatible storage
-    super({
-      storage,
-      logger: console, // Use console for logging in development
-    })
-  }
 }
 
 const contactBookService = new ContactBookService()

@@ -2,12 +2,12 @@ import 'reflect-metadata'
 
 import { keyringService, notificationService, permissionService } from '../../services'
 import { PromiseFlow, underline2Camelcase } from '../../utils'
-import { EVENTS } from '@unisat/wallet-shared'
-import eventBus from '../../shared/eventBus'
+import { BUS_METHODS, BUS_EVENTS, ErrorCodes, WalletError } from '@unisat/wallet-shared'
 
 import providerController from './controller'
-import { ErrorCodes, WalletError } from '../../utils/error'
+
 import { ChainType } from '@unisat/wallet-types'
+import { bgEventBus } from 'src/utils/eventBus'
 
 class UnlockManager {
   private unlockPromise: Promise<any> | null = null
@@ -154,8 +154,8 @@ const flowContext = flow
     requestDefer
       .then(result => {
         if (isSignApproval(approvalType)) {
-          eventBus.emit(EVENTS.broadcastToUI, {
-            method: EVENTS.SIGN_FINISHED,
+          bgEventBus.emit(BUS_EVENTS.broadcastToUI, {
+            method: BUS_METHODS.SIGN_FINISHED,
             params: {
               success: true,
               data: result,
@@ -166,8 +166,8 @@ const flowContext = flow
       })
       .catch((e: any) => {
         if (isSignApproval(approvalType)) {
-          eventBus.emit(EVENTS.broadcastToUI, {
-            method: EVENTS.SIGN_FINISHED,
+          bgEventBus.emit(BUS_EVENTS.broadcastToUI, {
+            method: BUS_METHODS.SIGN_FINISHED,
             params: {
               success: false,
               errorMsg: JSON.stringify(e),
