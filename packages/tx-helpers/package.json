@@ -50,6 +50,7 @@
   "dependencies": {
     "@unisat/wallet-bitcoin": "workspace:*",
     "@unisat/wallet-types": "workspace:*",
+    "@unisat/wallet-shared": "workspace:*",
     "@unisat/keyring-service": "workspace:*",
     "big-integer": "^1.6.52",
     "bignumber.js": "^9.1.2"

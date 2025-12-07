@@ -1,9 +1,9 @@
 import { NetworkType } from '@unisat/wallet-types'
-import { ErrorCodes, WalletUtilsError } from './error'
 import { Transaction } from './transaction/transaction'
 import { utxoHelper } from './transaction/utxo'
 import { UnspentOutput } from './types'
 import { bitcoin } from '@unisat/wallet-bitcoin'
+import { ErrorCodes, WalletError } from '@unisat/wallet-shared'
 
 export async function sendInscription({
   assetUtxo,
@@ -13,7 +13,6 @@ export async function sendInscription({
   changeAddress,
   feeRate,
   outputValue,
-  enableRBF = true,
   enableMixed = false,
 }: {
   assetUtxo: UnspentOutput
@@ -23,18 +22,17 @@ export async function sendInscription({
   changeAddress: string
   feeRate: number
   outputValue: number
-  enableRBF?: boolean
   enableMixed?: boolean
 }): Promise<{
   psbt: bitcoin.Psbt
   toSignInputs: any[]
 }> {
   if (utxoHelper.hasAnyAssets(btcUtxos)) {
-    throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS)
+    throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
   if (!enableMixed && assetUtxo.inscriptions.length !== 1) {
-    throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS)
+    throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
   const maxOffset = assetUtxo.inscriptions.reduce((pre, cur) => {
@@ -42,13 +40,13 @@ export async function sendInscription({
   }, 0)
 
   if (outputValue - 1 < maxOffset) {
-    throw new WalletUtilsError(ErrorCodes.ASSET_MAYBE_LOST)
+    throw new WalletError(ErrorCodes.ASSET_MAYBE_LOST)
   }
 
   const tx = new Transaction()
   tx.setNetworkType(networkType)
   tx.setFeeRate(feeRate)
-  tx.setEnableRBF(enableRBF)
+  tx.setEnableRBF(true)
   tx.setChangeAddress(changeAddress)
 
   tx.addInput(assetUtxo)

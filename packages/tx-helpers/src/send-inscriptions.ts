@@ -1,10 +1,10 @@
 import { NetworkType } from '@unisat/wallet-types'
-import { ErrorCodes, WalletUtilsError } from './error'
 import { Transaction } from './transaction/transaction'
 import { utxoHelper } from './transaction/utxo'
 import { UnspentOutput } from './types'
 import { bitcoin } from '@unisat/wallet-bitcoin'
 import { ToSignInput } from '@unisat/keyring-service/types'
+import { ErrorCodes, WalletError } from '@unisat/wallet-shared'
 
 export async function sendInscriptions({
   assetUtxos,
@@ -13,7 +13,6 @@ export async function sendInscriptions({
   networkType,
   changeAddress,
   feeRate,
-  enableRBF = true,
 }: {
   assetUtxos: UnspentOutput[]
   btcUtxos: UnspentOutput[]
@@ -21,19 +20,17 @@ export async function sendInscriptions({
   networkType: NetworkType
   changeAddress: string
   feeRate: number
-  enableRBF?: boolean
 }): Promise<{
   psbt: bitcoin.Psbt
   toSignInputs: any[]
 }> {
   if (utxoHelper.hasAnyAssets(btcUtxos)) {
-    throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS)
+    throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
   const tx = new Transaction()
   tx.setNetworkType(networkType)
   tx.setFeeRate(feeRate)
-  tx.setEnableRBF(enableRBF)
   tx.setChangeAddress(changeAddress)
 
   const toSignInputs: ToSignInput[] = []

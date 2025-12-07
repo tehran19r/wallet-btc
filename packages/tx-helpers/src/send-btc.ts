@@ -1,17 +1,16 @@
 import { NetworkType } from '@unisat/wallet-types'
-import { ErrorCodes, WalletUtilsError } from './error'
 import { Transaction } from './transaction/transaction'
 import { utxoHelper } from './transaction/utxo'
 import { UnspentOutput } from './types'
 import { bitcoin, UTXO_DUST } from '@unisat/wallet-bitcoin'
 import { ToSignInput } from '@unisat/keyring-service/types'
+import { ErrorCodes, WalletError } from '@unisat/wallet-shared'
 export async function sendBTC({
   btcUtxos,
   tos,
   networkType,
   changeAddress,
   feeRate,
-  enableRBF = true,
   memo,
   memos,
 }: {
@@ -23,7 +22,6 @@ export async function sendBTC({
   networkType: NetworkType
   changeAddress: string
   feeRate: number
-  enableRBF?: boolean
   memo?: string
   memos?: string[]
 }): Promise<{
@@ -31,13 +29,13 @@ export async function sendBTC({
   toSignInputs: any[]
 }> {
   if (utxoHelper.hasAnyAssets(btcUtxos)) {
-    throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS)
+    throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
   const tx = new Transaction()
   tx.setNetworkType(networkType)
   tx.setFeeRate(feeRate)
-  tx.setEnableRBF(enableRBF)
+  tx.setEnableRBF(true)
   tx.setChangeAddress(changeAddress)
 
   tos.forEach(v => {
@@ -70,22 +68,20 @@ export async function sendAllBTC({
   toAddress,
   networkType,
   feeRate,
-  enableRBF = true,
 }: {
   btcUtxos: UnspentOutput[]
   toAddress: string
   networkType: NetworkType
   feeRate: number
-  enableRBF?: boolean
 }) {
   if (utxoHelper.hasAnyAssets(btcUtxos)) {
-    throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS)
+    throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
   const tx = new Transaction()
   tx.setNetworkType(networkType)
   tx.setFeeRate(feeRate)
-  tx.setEnableRBF(enableRBF)
+  tx.setEnableRBF(true)
   tx.addOutput(toAddress, UTXO_DUST)
 
   const toSignInputs: ToSignInput[] = []
@@ -97,7 +93,7 @@ export async function sendAllBTC({
   const fee = await tx.calNetworkFee()
   const unspent = tx.getTotalInput() - fee
   if (unspent < UTXO_DUST) {
-    throw new WalletUtilsError(ErrorCodes.INSUFFICIENT_BTC_UTXO)
+    throw new WalletError(ErrorCodes.INSUFFICIENT_BTC_UTXO)
   }
   tx.outputs[0]!.value = unspent
 

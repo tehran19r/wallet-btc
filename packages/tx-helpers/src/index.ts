@@ -12,7 +12,6 @@ export * from './transaction'
 
 // Types and constants
 export * from './types'
-export * from './error'
 
 // Runes utilities
 export * from './runes'

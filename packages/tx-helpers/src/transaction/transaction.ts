@@ -11,7 +11,7 @@ import {
   UTXO_DUST,
 } from '@unisat/wallet-bitcoin'
 import { UnspentOutput } from 'src/types'
-import { ErrorCodes, WalletUtilsError } from 'src/error'
+import { ErrorCodes, WalletError } from '@unisat/wallet-shared'
 interface TxInput {
   data: {
     hash: string
@@ -310,7 +310,7 @@ export class Transaction {
         totalOutput - totalInput
       )
       if (selectedUtxos.length == 0) {
-        throw new WalletUtilsError(ErrorCodes.INSUFFICIENT_BTC_UTXO)
+        throw new WalletError(ErrorCodes.INSUFFICIENT_FEE_UTXO)
       }
       selectedUtxos.forEach(v => {
         this.addInput(v)
@@ -342,10 +342,10 @@ export class Transaction {
       this.selectBtcUtxos()
     } else {
       if (forceAsFee) {
-        throw new WalletUtilsError(ErrorCodes.INSUFFICIENT_BTC_UTXO)
+        throw new WalletError(ErrorCodes.INSUFFICIENT_FEE_UTXO)
       }
       if (this.getTotalInput() < this.getTotalOutput()) {
-        throw new WalletUtilsError(ErrorCodes.INSUFFICIENT_BTC_UTXO)
+        throw new WalletError(ErrorCodes.INSUFFICIENT_FEE_UTXO)
       }
       this._cacheNetworkFee = await this.calNetworkFee()
     }

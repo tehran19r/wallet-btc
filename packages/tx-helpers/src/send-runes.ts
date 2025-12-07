@@ -1,5 +1,4 @@
 import bigInt from 'big-integer'
-import { ErrorCodes, WalletUtilsError } from './error'
 
 import { varint } from './runes'
 import { RuneId } from './runes/rund_id'
@@ -9,6 +8,7 @@ import { UnspentOutput } from './types'
 import { bitcoin } from '@unisat/wallet-bitcoin'
 import { NetworkType } from '@unisat/wallet-types'
 import { ToSignInput } from '@unisat/keyring-service/types'
+import { ErrorCodes, WalletError } from '@unisat/wallet-shared'
 
 // only one arc20 can be send
 export async function sendRunes({
@@ -22,7 +22,6 @@ export async function sendRunes({
   runeAmount,
   outputValue,
   feeRate,
-  enableRBF = true,
 }: {
   assetUtxos: UnspentOutput[]
   btcUtxos: UnspentOutput[]
@@ -34,21 +33,20 @@ export async function sendRunes({
   runeAmount: string
   outputValue: number
   feeRate: number
-  enableRBF?: boolean
 }) {
   // safe check
   if (utxoHelper.hasInscription(assetUtxos)) {
-    throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS)
+    throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
   if (utxoHelper.hasAnyAssets(btcUtxos)) {
-    throw new WalletUtilsError(ErrorCodes.NOT_SAFE_UTXOS)
+    throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
   const tx = new Transaction()
   tx.setNetworkType(networkType)
   tx.setFeeRate(feeRate)
-  tx.setEnableRBF(enableRBF)
+  tx.setEnableRBF(true)
   tx.setChangeAddress(btcAddress)
 
   const toSignInputs: ToSignInput[] = []
@@ -80,7 +78,7 @@ export async function sendRunes({
   const changedRuneAmount = fromRuneAmount.minus(bigInt(runeAmount))
 
   if (changedRuneAmount.lt(0)) {
-    throw new WalletUtilsError(ErrorCodes.INSUFFICIENT_ASSET_UTXO)
+    throw new WalletError(ErrorCodes.INSUFFICIENT_ASSET_UTXO)
   }
 
   let needChange = false
