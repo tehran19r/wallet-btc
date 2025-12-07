@@ -31,9 +31,9 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@unisat/i18n": "workspace:*",
     "@unisat/wallet-types": "workspace:*",
     "@unisat/wallet-shared": "workspace:*",
+    "@unisat/wallet-storage": "workspace:*",
     "debounce": "^1.2.1",
     "eventemitter3": "^5.0.1",
     "lodash": "^4.17.21"

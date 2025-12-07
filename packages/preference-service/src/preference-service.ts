@@ -2,103 +2,121 @@
  * Cross-platform preference management service
  */
 
+import {
+  Account,
+  AddressFlagType,
+  BitcoinBalance,
+  DEFAULT_LOCKTIME_ID,
+  TxHistoryItem,
+} from '@unisat/wallet-shared'
+import { ProxyStorageAdapter } from '@unisat/wallet-storage'
+import { ChainType, NetworkType } from '@unisat/wallet-types'
 import { EventEmitter } from 'eventemitter3'
 import cloneDeep from 'lodash/cloneDeep.js'
-import {
-  BasePreferenceStore,
-  PreferenceServiceConfig,
-  PreferenceServiceEvents,
-  StorageAdapter,
-} from './types'
-import { changeLanguage } from '@unisat/i18n'
-import { MigrationManager, commonMigrations } from './utils/migration'
-import { ChainType } from '@unisat/wallet-types'
-import { Account, AddressFlagType, BitcoinBalance, TxHistoryItem } from '@unisat/wallet-shared'
-
+import { BasePreferenceStore, PreferenceServiceConfig, PreferenceServiceEvents } from './types'
 const SUPPORTED_LOCALES = ['en', 'zh_TW', 'fr', 'es', 'ru', 'ja']
+
+const defaultTemplate: BasePreferenceStore = {
+  currentKeyringIndex: 0,
+  currentAccount: undefined,
+  editingKeyringIndex: 0,
+  editingAccount: undefined,
+  externalLinkAck: false,
+  balanceMap: {},
+  historyMap: {},
+  locale: 'auto',
+  watchAddressPreference: {},
+  walletSavedList: [],
+  alianNames: {},
+  initAlianNames: false,
+  currentVersion: '0',
+  firstOpen: false,
+  currency: 'USD',
+  addressType: 0,
+  networkType: NetworkType.MAINNET as any,
+  chainType: ChainType.BITCOIN_MAINNET as any,
+  keyringAlianNames: {},
+  accountAlianNames: {},
+  uiCachedData: {},
+  skippedVersion: '',
+  appTab: {
+    summary: { apps: [] },
+    readAppTime: {},
+    readTabTime: 1,
+  },
+  showSafeNotice: true,
+  addressFlags: {},
+  enableSignData: false,
+  autoLockTimeId: DEFAULT_LOCKTIME_ID,
+  openInSidePanel: false,
+  developerMode: false,
+  rateUsStatus: {
+    hasRated: false,
+    ratePromptDismissedAt: 0,
+    hasShownSecondPrompt: false,
+  },
+
+  acceptLowFeeMode: false,
+}
 
 export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
   protected store!: BasePreferenceStore
-  protected storage: StorageAdapter
+  protected storage: ProxyStorageAdapter = undefined as any
   protected logger: any
   protected t: any
   protected eventBus: EventEmitter | undefined
-  protected template: BasePreferenceStore
-  protected supportedLocales: string[]
-  protected platformDefaults: Partial<BasePreferenceStore>
-  protected migrationManager: MigrationManager
-  protected getBrowserLanguages: (() => Promise<string[]>) | undefined
+  protected template: BasePreferenceStore = defaultTemplate
+  protected supportedLocales: string[] = SUPPORTED_LOCALES
+  protected platformDefaults: Partial<BasePreferenceStore> = {}
+  protected defaultLang: string = 'en'
+  private storageKey: string = 'preference'
 
   // State flags
   protected initialized = false
   public popupOpen = false
   public hasOtherProvider = false
 
-  constructor(config: PreferenceServiceConfig) {
+  constructor() {
     super()
-
-    this.storage = config.storage
-    this.logger = config.logger || console
-    this.t = config.t || ((key: string) => key)
-    this.eventBus = config.eventBus
-    this.template = config.template!
-    this.supportedLocales = SUPPORTED_LOCALES
-    this.platformDefaults = config.platformDefaults || {}
-    this.getBrowserLanguages = config.getBrowserLanguages || undefined
-
-    // Setup migration manager
-    this.migrationManager = new MigrationManager()
-    commonMigrations.forEach(migration => this.migrationManager.addMigration(migration))
-  }
-
-  init0(config: PreferenceServiceConfig) {
-    this.storage = config.storage
   }
 
   /**
    * Initialize the preference service
    */
-  async init(reset?: boolean): Promise<void> {
-    if (this.initialized && !reset) {
-      return
+  async init(config: PreferenceServiceConfig): Promise<void> {
+    if (config.storage) {
+      this.storage = config.storage
+    }
+
+    if (config.logger) {
+      this.logger = config.logger
+    }
+
+    if (config.t) {
+      this.t = config.t
+    }
+
+    if (config.eventBus) {
+      this.eventBus = config.eventBus
+    }
+
+    if (!this.storage) {
+      throw new Error('PreferenceService: Storage adapter is required')
     }
 
     try {
-      // Get default locale
-      let defaultLang = 'en'
-      if (this.getBrowserLanguages) {
-        const browserLangs = await this.getBrowserLanguages()
-        if (browserLangs.length > 0) {
-          const supportedLang = browserLangs.find(lang =>
-            this.supportedLocales.includes(lang.replace(/-/g, '_'))
-          )
-          if (supportedLang) {
-            defaultLang = supportedLang.replace(/-/g, '_')
-          }
-        }
-      }
-
       // Merge template with platform defaults
       const finalTemplate = {
         ...this.template,
         ...this.platformDefaults,
-        locale: defaultLang,
+        locale: this.defaultLang,
       } as BasePreferenceStore
 
       // Create persistent store
-      this.store = await this.storage.createPersistentProxy('preference', finalTemplate)
+      this.store = await this.storage.createPersistentProxy(this.storageKey, finalTemplate)
 
       // Validate and fix store data
-      await this.validateAndFixStore(defaultLang)
-
-      // Set initial language using @unisat/i18n
-      if (this.store.locale) {
-        try {
-          await changeLanguage(this.store.locale)
-        } catch (error) {
-          this.logger.warn('[PreferenceService] Failed to change language:', error)
-        }
-      }
+      await this.validateAndFixStore(this.defaultLang)
 
       this.initialized = true
       this.logger.debug('[PreferenceService] Initialized successfully')
@@ -108,6 +126,20 @@ export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
     }
   }
 
+  resetAllData = async () => {
+    const finalTemplate = cloneDeep({
+      ...this.template,
+      ...this.platformDefaults,
+      locale: this.defaultLang,
+    }) as BasePreferenceStore
+
+    await this.storage.set(this.storageKey, null)
+    this.store = await this.storage.createPersistentProxy(this.storageKey, finalTemplate)
+
+    await this.validateAndFixStore(this.defaultLang)
+
+    this.logger.debug('[PreferenceService] Data reset')
+  }
   /**
    * Validate and fix store data
    */
@@ -189,10 +221,6 @@ export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
     }
   }
 
-  resetAllData = () => {
-    return this.init(true)
-  }
-
   /**
    * Get current account
    */
@@ -205,12 +233,6 @@ export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
    */
   setCurrentAccount(account?: Account | null): void {
     this.store.currentAccount = account
-    if (account) {
-      this.emit('account:changed', account)
-      if (this.eventBus) {
-        this.eventBus.emit('accountsChanged', [account.address])
-      }
-    }
   }
 
   /**
@@ -292,12 +314,6 @@ export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
 
   async setLocale(locale: string): Promise<void> {
     this.store.locale = locale
-    try {
-      await changeLanguage(locale)
-    } catch (error) {
-      this.logger.warn('[PreferenceService] Failed to change language:', error)
-    }
-    this.emit('locale:changed', locale)
   }
 
   /**
@@ -309,7 +325,6 @@ export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
 
   setCurrency(currency: string): void {
     this.store.currency = currency
-    this.emit('currency:changed', currency)
   }
 
   /**
@@ -321,7 +336,6 @@ export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
 
   setChainType(chainType: ChainType): void {
     this.store.chainType = chainType
-    this.emit('chain:changed', chainType)
   }
 
   /**
@@ -629,6 +643,14 @@ export class PreferenceService extends EventEmitter<PreferenceServiceEvents> {
       ratePromptDismissedAt: null,
       hasShownSecondPrompt: false,
     }
+  }
+
+  getAcceptLowFeeMode = (): boolean => {
+    return this.store.acceptLowFeeMode || false
+  }
+
+  setAcceptLowFeeMode = (accept: boolean): void => {
+    this.store.acceptLowFeeMode = accept
   }
 
   /**

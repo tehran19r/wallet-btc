@@ -15,6 +15,7 @@ import {
   TokenTransfer,
   TxHistoryItem,
 } from '@unisat/wallet-shared'
+import { ProxyStorageAdapter } from '@unisat/wallet-storage'
 
 // Base preference store structure
 export interface BasePreferenceStore {
@@ -107,6 +108,8 @@ export interface BasePreferenceStore {
 
   // Mobile-specific fields (optional)
   rateUsStatus: RateUsStatus
+
+  acceptLowFeeMode: boolean
 }
 
 export interface RateUsStatus {
@@ -130,21 +133,12 @@ export interface MobilePreferenceStore extends BasePreferenceStore {
   }
 }
 
-// Storage adapter interface
-export interface StorageAdapter {
-  get(key: string): Promise<any>
-  set(key: string, value: any): Promise<void>
-  createPersistentProxy<T extends object>(name: string, template: T): Promise<T>
-}
-
 // Service configuration
 export interface PreferenceServiceConfig {
-  storage: StorageAdapter
+  storage: ProxyStorageAdapter
   logger?: any
   t?: any
   eventBus?: EventEmitter
-  template?: BasePreferenceStore
-  supportedLocales?: string[]
   platformDefaults?: Partial<BasePreferenceStore>
   getBrowserLanguages?: () => Promise<string[]>
 }
