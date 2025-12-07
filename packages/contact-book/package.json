@@ -42,7 +42,8 @@
   "author": "UniSat Team",
   "license": "MIT",
   "dependencies": {
-    "@unisat/wallet-types": "workspace:*"
+    "@unisat/wallet-types": "workspace:*",
+    "@unisat/wallet-storage": "workspace:*"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.6",

@@ -6,6 +6,7 @@ import {
   StorageAdapter,
   Logger,
 } from './types'
+import { ProxyStorageAdapter } from '@unisat/wallet-storage'
 
 // Default no-op logger
 const defaultLogger: Logger = {
@@ -25,27 +26,26 @@ const getCompositeKey = (address: string, chain: ChainType): string => {
 /**
  * Universal contact book management with multi-chain support
  */
-export class ContactBook {
+export class ContactBookService {
   private store: ContactBookStore = {}
-  private storage: StorageAdapter
-  private storageKey: string
-  private logger: Logger
-  private autoSync: boolean
+  private storage: ProxyStorageAdapter = undefined as any
+  private storageKey: string = 'contactBook'
+  private logger: Logger = defaultLogger
+  private autoSync: boolean = true
   private initialized = false
 
-  constructor(config: ContactBookConfig) {
-    this.storage = config.storage
-    this.storageKey = config.storageKey || 'contactBook'
-    this.logger = config.logger || defaultLogger
-    this.autoSync = config.autoSync !== false // default to true
-  }
+  constructor() {}
 
   /**
    * Initialize the contact book - loads data from storage
    */
-  async init(reset?: boolean): Promise<void> {
-    if (this.initialized && !reset) {
-      return
+  async init(config: ContactBookConfig): Promise<void> {
+    if (config.storage) {
+      this.storage = config.storage
+    }
+
+    if (config.logger) {
+      this.logger = config.logger
     }
 
     this.logger.debug('Initializing contact book...')
@@ -64,6 +64,11 @@ export class ContactBook {
       this.logger.error('Contact book initialization failed:', error)
       throw error
     }
+  }
+
+  resetAllData = () => {
+    this.storage.set(this.storageKey, {})
+    this.store = {}
   }
 
   /**
@@ -379,9 +384,5 @@ export class ContactBook {
   getRawStore(): ContactBookStore {
     this.ensureInitialized()
     return { ...this.store }
-  }
-
-  resetAllData = () => {
-    return this.init(true)
   }
 }

@@ -1,4 +1,5 @@
 import { ChainType } from '@unisat/wallet-types'
+import { ProxyStorageAdapter } from '@unisat/wallet-storage'
 
 /**
  * Contact book item interface
@@ -67,7 +68,7 @@ export interface ContactBookConfig {
   /**
    * Storage adapter instance
    */
-  storage: StorageAdapter
+  storage: ProxyStorageAdapter
 
   /**
    * Storage key name (default: 'contactBook')
