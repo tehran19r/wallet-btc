@@ -146,27 +146,32 @@ export function useCreateWalletLogicImportWordsStep(params: CreateWalletLogicPar
     setDisabled(false)
   }, [inputWordsText])
 
-  const onInputWordsTextChange = (e: { target: { value: string } } | string) => {
-    let value = typeof e === 'string' ? e : e.target.value
-    value = value.trim()
-    const wordsArr = textToWordsArray(value)
-    setInputWordsText(value)
-    value = wordsArr.join(' ')
-    let newInputWords = [...wordsArr]
+  const updateWords = (words: Array<string>) => {
+    setInputWords(words)
+    let text = words.join(' ')
+    setInputWordsText(text)
 
-    while (newInputWords.length < maxWordsCount) {
-      newInputWords.push('')
-    }
-    setInputWords(newInputWords)
+    const enteredWordsCount = words.filter(key => {
+      return key.trim() != ''
+    }).length
 
-    const enteredWordsCount = wordsArr.filter(v => v.trim() !== '').length
+    console.log(words, text, enteredWordsCount)
+
     setEnteredWordsCount(enteredWordsCount)
 
-    if (!validateMnemonic(value) && enteredWordsCount >= maxWordsCount) {
+    if (!validateMnemonic(text) && enteredWordsCount >= maxWordsCount) {
       setInputWordsError(true)
     } else {
       setInputWordsError(false)
     }
+  }
+
+  const onInputWordsTextChange = (e: { target: { value: string } } | string) => {
+    let value = typeof e === 'string' ? e : e.target.value
+    value = value.trim()
+
+    const wordsArr = textToWordsArray(value)
+    updateWords(wordsArr)
   }
 
   const onInputWordsChange = (e: { target: { value: string } } | string, index: number) => {
@@ -175,27 +180,7 @@ export function useCreateWalletLogicImportWordsStep(params: CreateWalletLogicPar
 
     const newKeys = [...inputWords]
     newKeys.splice(index, 1, value)
-    setInputWords(newKeys)
-
-    const joinedWords = newKeys.join(' ')
-    setInputWordsText(joinedWords)
-
-    const enteredWordsCount = newKeys.filter(key => {
-      return key.trim() != ''
-    }).length
-
-    setEnteredWordsCount(enteredWordsCount)
-
-    if (!validateMnemonic(value) && enteredWordsCount >= maxWordsCount) {
-      setInputWordsError(true)
-    } else {
-      setInputWordsError(false)
-    }
-  }
-
-  const onInputWalletNameChange = (e: { target: { value: string } } | string) => {
-    const value = typeof e === 'string' ? e : e.target.value
-    updateContextData({ walletName: value })
+    updateWords(newKeys)
   }
 
   // extension
@@ -210,10 +195,15 @@ export function useCreateWalletLogicImportWordsStep(params: CreateWalletLogicPar
         }
         newKeys[index + i] = textArr[i]
       }
-      setInputWords(newKeys)
+      updateWords(newKeys)
     }
 
     event.preventDefault()
+  }
+
+  const onInputWalletNameChange = (e: { target: { value: string } } | string) => {
+    const value = typeof e === 'string' ? e : e.target.value
+    updateContextData({ walletName: value })
   }
 
   const onClickNext = async () => {
