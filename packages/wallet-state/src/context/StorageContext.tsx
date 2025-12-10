@@ -47,7 +47,7 @@ type ThemeMode = 'light' | 'dark'
 const defaultThemeMode = 'light'
 
 export interface BaseStorageProvider {
-  get: (key: string) => Promise<string>
+  get: (key: string) => Promise<any>
   set: (key: string, value: string) => Promise<void>
 }
 
@@ -315,7 +315,7 @@ export function createStorageProvider(base: BaseStorageProvider): StorageContext
     //
     async getEnableFaceId() {
       const val = await base.get(StorageType.ENABLE_FACEID)
-      return val === 'true'
+      return val === 'true' || val == true
     },
     async setEnableFaceId(enable: boolean) {
       await base.set(StorageType.ENABLE_FACEID, String(enable))
