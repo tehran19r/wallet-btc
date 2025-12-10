@@ -293,7 +293,9 @@ export function createStorageProvider(base: BaseStorageProvider): StorageContext
 
     async getUnbackupKeyringIds() {
       const val = await base.get(StorageType.UNBACKUP_KEYRINGS)
-      if (val) {
+      if (Array.isArray(val)) {
+        return val
+      } else if (typeof val === 'string') {
         try {
           const keyrings = JSON.parse(val)
           if (Array.isArray(keyrings)) {
