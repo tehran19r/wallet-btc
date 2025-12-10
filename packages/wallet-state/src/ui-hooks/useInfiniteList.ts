@@ -8,7 +8,7 @@ interface UseInfiniteListOptions<T> {
 
 export function useInfiniteList<T>({
   fetcher,
-  pageSize = 50,
+  pageSize = 20,
   dependencies = [],
 }: UseInfiniteListOptions<T>) {
   const [data, setData] = useState<T[]>([])

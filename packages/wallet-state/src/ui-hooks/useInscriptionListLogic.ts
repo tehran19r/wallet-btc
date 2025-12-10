@@ -1,6 +1,15 @@
 import { Inscription } from '@unisat/wallet-shared'
 
-import { useChainType, useCurrentAccount, useNavigation, useWallet } from '..'
+import { useEffect, useRef } from 'react'
+import {
+  OrdinalsAssetTabKey,
+  useChainType,
+  useCurrentAccount,
+  useNavigation,
+  useOrdinalsAssetTabKey,
+  useWallet,
+  useWallTabFocusRefresh,
+} from '..'
 import { useInfiniteList } from './useInfiniteList'
 
 export function useInscriptionListLogic() {
@@ -18,6 +27,9 @@ export function useInscriptionListLogic() {
     onLoadMore,
   } = useInfiniteList<Inscription>({
     fetcher: async (page, pageSize) => {
+      if (currentAccount.address === '') {
+        return { list: [], total: 0 }
+      }
       const { list, total } = await wallet.getAllInscriptionList(
         currentAccount.address,
         page,
@@ -27,6 +39,23 @@ export function useInscriptionListLogic() {
     },
     dependencies: [currentAccount.address, chainType],
   })
+
+  const tabKey = useOrdinalsAssetTabKey()
+  const isFocus = tabKey === OrdinalsAssetTabKey.ALL
+  const lastRefreshTimeRef = useRef<number>(0)
+  const walletTabFocusRefresh = useWallTabFocusRefresh()
+  useEffect(() => {
+    if (!isFocus) return
+
+    // already refreshed → do nothing
+    const alreadyRefreshed = lastRefreshTimeRef.current === walletTabFocusRefresh
+    if (alreadyRefreshed) return
+
+    onRefresh()
+
+    // mark refreshed
+    lastRefreshTimeRef.current = walletTabFocusRefresh
+  }, [walletTabFocusRefresh, isFocus])
 
   const onClickItem = (item: Inscription) => {
     nav.navigate('OrdinalsInscriptionScreen', {

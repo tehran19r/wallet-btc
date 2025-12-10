@@ -1,6 +1,14 @@
 import { RuneBalance, TickPriceItem } from '@unisat/wallet-shared'
-import { useRef, useState } from 'react'
-import { useChainType, useCurrentAccount, useNavigation, useWallet } from '..'
+import { useEffect, useRef, useState } from 'react'
+import {
+  AssetTabKey,
+  useAssetTabKey,
+  useChainType,
+  useCurrentAccount,
+  useNavigation,
+  useWallet,
+  useWallTabFocusRefresh,
+} from '..'
 import { useInfiniteList } from './useInfiniteList'
 
 export function useRunesListLogic() {
@@ -29,6 +37,9 @@ export function useRunesListLogic() {
     onLoadMore,
   } = useInfiniteList<RuneBalance>({
     fetcher: async (page, pageSize) => {
+      if (currentAccount.address === '') {
+        return { list: [], total: 0 }
+      }
       const { list, total } = await wallet.getRunesList(currentAccount.address, page, pageSize)
       if (list.length > 0) {
         wallet.getRunesPrice(list.map(item => item.spacedRune)).then(updatePrices)
@@ -37,6 +48,23 @@ export function useRunesListLogic() {
     },
     dependencies: [currentAccount.address, chainType],
   })
+
+  const assetTabKey = useAssetTabKey()
+  const isFocus = assetTabKey === AssetTabKey.RUNES
+  const lastRefreshTimeRef = useRef<number>(0)
+  const walletTabFocusRefresh = useWallTabFocusRefresh()
+  useEffect(() => {
+    if (!isFocus) return
+
+    // already refreshed → do nothing
+    const alreadyRefreshed = lastRefreshTimeRef.current === walletTabFocusRefresh
+    if (alreadyRefreshed) return
+
+    onRefresh()
+
+    // mark refreshed
+    lastRefreshTimeRef.current = walletTabFocusRefresh
+  }, [walletTabFocusRefresh, isFocus])
 
   const onClickItem = (item: RuneBalance) => {
     nav.navigate('RunesTokenScreen', { runeid: item.runeid })

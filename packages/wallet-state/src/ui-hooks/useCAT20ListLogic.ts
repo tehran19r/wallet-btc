@@ -1,8 +1,17 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { CAT20Balance, CAT_VERSION, TickPriceItem } from '@unisat/wallet-shared'
 
-import { getSupportedAssets, useChainType, useCurrentAccount, useNavigation, useWallet } from '..'
+import {
+  CATAssetTabKey,
+  getSupportedAssets,
+  useCATAssetTabKey,
+  useChainType,
+  useCurrentAccount,
+  useNavigation,
+  useWallet,
+  useWallTabFocusRefresh,
+} from '..'
 import { useInfiniteList } from './useInfiniteList'
 
 export function useCAT20ListLogic(version: CAT_VERSION) {
@@ -32,7 +41,7 @@ export function useCAT20ListLogic(version: CAT_VERSION) {
   } = useInfiniteList<CAT20Balance>({
     fetcher: async (page, pageSize) => {
       const supportedAssets = getSupportedAssets(chainType, currentAccount.address)
-      if (!supportedAssets.assets.CAT20) {
+      if (!supportedAssets.assets.CAT20 || currentAccount.address === '') {
         return { list: [], total: 0 }
       }
       const { list, total } = await wallet.getCAT20List(
@@ -48,6 +57,23 @@ export function useCAT20ListLogic(version: CAT_VERSION) {
     },
     dependencies: [currentAccount.address, version, chainType],
   })
+
+  const tabKey = useCATAssetTabKey()
+  const isFocus = tabKey === CATAssetTabKey.CAT20 || CATAssetTabKey.CAT20_V2
+  const lastRefreshTimeRef = useRef<number>(0)
+  const walletTabFocusRefresh = useWallTabFocusRefresh()
+  useEffect(() => {
+    if (!isFocus) return
+
+    // already refreshed → do nothing
+    const alreadyRefreshed = lastRefreshTimeRef.current === walletTabFocusRefresh
+    if (alreadyRefreshed) return
+
+    onRefresh()
+
+    // mark refreshed
+    lastRefreshTimeRef.current = walletTabFocusRefresh
+  }, [walletTabFocusRefresh, isFocus])
 
   const onClickItem = (item: CAT20Balance) => {
     nav.navigate('CAT20TokenScreen', { tokenId: item.tokenId, version })

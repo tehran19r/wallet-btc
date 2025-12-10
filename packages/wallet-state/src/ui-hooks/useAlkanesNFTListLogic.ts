@@ -19,7 +19,7 @@ export function useAlkanesNFTListLogic(collectionId: string) {
   } = useInfiniteList<AlkanesInfo>({
     fetcher: async (page, pageSize) => {
       const supportedAssets = getSupportedAssets(chainType, currentAccount.address)
-      if (!supportedAssets.assets.alkanes) {
+      if (!supportedAssets.assets.alkanes || currentAccount.address === '') {
         return { list: [], total: 0 }
       }
       const { list, total } = await wallet.getAlkanesCollectionItems(

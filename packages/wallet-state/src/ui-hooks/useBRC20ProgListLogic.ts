@@ -1,6 +1,15 @@
 import { TickPriceItem, TokenBalance } from '@unisat/wallet-shared'
-import { useRef, useState } from 'react'
-import { getSupportedAssets, useChainType, useCurrentAccount, useNavigation, useWallet } from '..'
+import { useEffect, useRef, useState } from 'react'
+import {
+  getSupportedAssets,
+  OrdinalsAssetTabKey,
+  useChainType,
+  useCurrentAccount,
+  useNavigation,
+  useOrdinalsAssetTabKey,
+  useWallet,
+  useWallTabFocusRefresh,
+} from '..'
 import { useInfiniteList } from './useInfiniteList'
 
 export function useBRC20ProgListLogic() {
@@ -30,7 +39,7 @@ export function useBRC20ProgListLogic() {
   } = useInfiniteList<TokenBalance>({
     fetcher: async (page, pageSize) => {
       const supportedAssets = getSupportedAssets(chainType, currentAccount.address)
-      if (!supportedAssets.assets.brc20Prog) {
+      if (!supportedAssets.assets.brc20Prog || currentAccount.address === '') {
         return { list: [], total: 0 }
       }
 
@@ -42,6 +51,23 @@ export function useBRC20ProgListLogic() {
     },
     dependencies: [currentAccount.address, chainType],
   })
+
+  const tabKey = useOrdinalsAssetTabKey()
+  const isFocus = tabKey === OrdinalsAssetTabKey.BRC20_6BYTE
+  const lastRefreshTimeRef = useRef<number>(0)
+  const walletTabFocusRefresh = useWallTabFocusRefresh()
+  useEffect(() => {
+    if (!isFocus) return
+
+    // already refreshed → do nothing
+    const alreadyRefreshed = lastRefreshTimeRef.current === walletTabFocusRefresh
+    if (alreadyRefreshed) return
+
+    onRefresh()
+
+    // mark refreshed
+    lastRefreshTimeRef.current = walletTabFocusRefresh
+  }, [walletTabFocusRefresh, isFocus])
 
   const onClickItem = (item: TokenBalance) => {
     nav.navigate('BRC20TokenScreen', { tokenBalance: item, ticker: item.ticker })
