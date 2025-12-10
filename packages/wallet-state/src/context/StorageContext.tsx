@@ -193,9 +193,9 @@ export function createStorageProvider(base: BaseStorageProvider): StorageContext
     async getAutomaticLockTime() {
       const val = await base.get(StorageType.AUTO_LOCK_TIME)
       if (val) {
-        return JSON.parse(val)
+        return val as AutoLockTime
       } else {
-        return defaultAutoLockTime
+        return null
       }
     },
     async setAutomaticLockTime(time: AutoLockTime) {
