@@ -96,4 +96,5 @@ export interface BitcoinBalanceV2 {
   availableBalance: number
   unavailableBalance: number
   totalBalance: number
+  chainType: ChainType
 }

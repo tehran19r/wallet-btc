@@ -1,17 +1,17 @@
 import compareVersions from 'compare-versions'
 import { useCallback } from 'react'
 
-import { CHAINS_MAP, CAT_VERSION, PlatformEnv } from '@unisat/wallet-shared'
+import { BABYLON_CONFIG_MAP } from '@unisat/babylon-service/types'
+import { CAT_VERSION, CHAINS_MAP, PlatformEnv } from '@unisat/wallet-shared'
 import { AddressType, ChainType, NetworkType } from '@unisat/wallet-types'
 import { useWallet } from '../context/WalletContext'
 import { getAddressType } from '../utils/bitcoin-utils'
-import { BABYLON_CONFIG_MAP } from '@unisat/babylon-service/types'
 
+import { useI18n } from 'src/context/I18nContext'
 import { AppState } from '..'
 import { useCurrentAccount } from '../hooks/accounts'
-import { useAppDispatch, useAppSelector } from './base'
 import { settingsActions } from '../reducers/settings'
-import { useI18n } from 'src/context/I18nContext'
+import { useAppDispatch, useAppSelector } from './base'
 
 export function useSettingsState(): AppState['settings'] {
   return useAppSelector(state => state.settings)
@@ -94,12 +94,12 @@ export function useChangeChainTypeCallback() {
   const wallet = useWallet()
   return useCallback(
     async (type: ChainType) => {
+      await wallet.setChainType(type)
       dispatch(
         (settingsActions as any).updateSettings({
           chainType: type,
         })
       )
-      await wallet.setChainType(type)
     },
     [dispatch]
   )

@@ -2,16 +2,16 @@ import { useCallback } from 'react'
 
 import { Account } from '@unisat/wallet-shared'
 
-import { AddressType } from '@unisat/wallet-types'
 import { KeyringType } from '@unisat/keyring-service/types'
+import { AddressType, ChainType } from '@unisat/wallet-types'
 
 import { AppState } from '..'
-import { useAppDispatch, useAppSelector } from './base'
-import { useCurrentKeyring } from './keyrings'
+import { useWallet } from '../context/WalletContext'
+import { accountActions } from '../reducers/accounts'
 import { keyringsActions } from '../reducers/keyrings'
 import { settingsActions } from '../reducers/settings'
-import { accountActions } from '../reducers/accounts'
-import { useWallet } from '../context/WalletContext'
+import { useAppDispatch, useAppSelector } from './base'
+import { useCurrentKeyring } from './keyrings'
 
 export function useAccountsState(): AppState['accounts'] {
   return useAppSelector(state => state.accounts)
@@ -40,6 +40,7 @@ export function useAccountBalance() {
       availableBalance: 0,
       unavailableBalance: 0,
       totalBalance: 0,
+      chainType: ChainType.BITCOIN_MAINNET,
     }
   )
 }
@@ -210,6 +211,7 @@ export function useFetchBalanceCallback() {
       accountActions['setBalanceV2']!({
         address: currentAccount.address,
         balance: balanceV2,
+        chainType: balanceV2.chainType,
       })
     )
   }, [dispatch, wallet, currentAccount, balance])

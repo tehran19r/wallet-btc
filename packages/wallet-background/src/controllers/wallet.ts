@@ -194,8 +194,9 @@ export class WalletController extends BaseController {
   }
 
   getAddressBalanceV2 = async (address: string) => {
+    const chainType = this.getChainType()
     const data = await walletApiService.bitcoin.getAddressBalanceV2(address)
-    return data
+    return { ...data, chainType }
   }
 
   getMultiAddressAssets = async (addresses: string) => {

@@ -1,3 +1,4 @@
+import { createSlice, Slice } from '@reduxjs/toolkit'
 import {
   Account,
   AddressSummary,
@@ -7,7 +8,6 @@ import {
   InscriptionSummary,
   TxHistoryItem,
 } from '@unisat/wallet-shared'
-import { createSlice, Slice } from '@reduxjs/toolkit'
 
 import { updateVersion } from '../actions/global'
 
@@ -165,7 +165,7 @@ const slice: Slice<AccountsState> = createSlice({
     ) {
       const {
         payload: {
-          balance: { availableBalance, unavailableBalance, totalBalance },
+          balance: { availableBalance, unavailableBalance, totalBalance, chainType },
           address,
         },
       } = action
@@ -173,10 +173,12 @@ const slice: Slice<AccountsState> = createSlice({
         availableBalance: 0,
         unavailableBalance: 0,
         totalBalance: 0,
+        chainType,
       }
       state.balanceV2Map[address].availableBalance = availableBalance
       state.balanceV2Map[address].unavailableBalance = unavailableBalance
       state.balanceV2Map[address].totalBalance = totalBalance
+      state.balanceV2Map[address].chainType = chainType
     },
     setAddressSummary(state, action: { payload: any }) {
       state.addressSummary = action.payload
