@@ -293,7 +293,7 @@ export function useFeeRateBarLogic({ readonly }: { readonly?: boolean }) {
     fontSize,
     isSpecialLocale,
     toggleLowFeeRate,
-    showCustomInput,
+    showCustomInput: readonly ? false : showCustomInput,
     toggleCustomInput,
     supportLowFeeMode,
     showLowFeeModeTipsPopover,
