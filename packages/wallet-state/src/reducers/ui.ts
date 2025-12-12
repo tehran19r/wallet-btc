@@ -52,7 +52,7 @@ export interface UIState {
   }
   navigationSource: NavigationSource
   isBalanceHidden: boolean
-  balanceDetailExpanded?: boolean
+  balanceDetailExpanded: boolean
 
   walletTopTabScreen: {
     toptabKey: WallettopTabScreenTabKey
@@ -91,6 +91,7 @@ export const initialState: UIState = {
   },
   navigationSource: NavigationSource.NORMAL,
   isBalanceHidden: false,
+  balanceDetailExpanded: true,
 
   walletTopTabScreen: {
     toptabKey: WallettopTabScreenTabKey.Ordinals,
@@ -284,6 +285,9 @@ const slice: Slice<UIState> = createSlice({
       }
       if (state.isBalanceHidden === undefined) {
         state.isBalanceHidden = false
+      }
+      if (state.balanceDetailExpanded === undefined) {
+        state.balanceDetailExpanded = true
       }
     })
   },

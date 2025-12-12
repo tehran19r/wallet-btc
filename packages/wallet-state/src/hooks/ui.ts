@@ -329,9 +329,9 @@ export function useBalanceCardDetailExpanded() {
 }
 
 export function useToggleBalanceCardDetailExpanded() {
-  const uiState = useUIState()
+  const { balanceDetailExpanded } = useUIState()
   const dispatch = useAppDispatch()
-  return () => {
-    dispatch((uiActions as any).setBalanceDetailExpanded(!uiState.balanceDetailExpanded))
-  }
+  return useCallback(() => {
+    dispatch((uiActions as any).setBalanceDetailExpanded(!balanceDetailExpanded))
+  }, [dispatch, balanceDetailExpanded])
 }
