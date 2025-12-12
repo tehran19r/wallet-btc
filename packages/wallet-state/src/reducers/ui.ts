@@ -52,6 +52,7 @@ export interface UIState {
   }
   navigationSource: NavigationSource
   isBalanceHidden: boolean
+  balanceDetailExpanded?: boolean
 
   walletTopTabScreen: {
     toptabKey: WallettopTabScreenTabKey
@@ -252,6 +253,9 @@ const slice: Slice<UIState> = createSlice({
     },
     setBalanceHidden(state, action: { payload: boolean }) {
       state.isBalanceHidden = action.payload
+    },
+    setBalanceDetailExpanded(state, action: { payload: boolean }) {
+      state.balanceDetailExpanded = action.payload
     },
   },
   extraReducers: builder => {

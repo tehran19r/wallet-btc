@@ -322,3 +322,16 @@ export function useRunesInscribeUrl(rune: string) {
   const newUrl = `${unisatWebsite}/runes/inscribe?only=1&tab=mint&rune=${rune}`
   return newUrl
 }
+
+export function useBalanceCardDetailExpanded() {
+  const uiState = useUIState()
+  return uiState.balanceDetailExpanded
+}
+
+export function useToggleBalanceCardDetailExpanded() {
+  const uiState = useUIState()
+  const dispatch = useAppDispatch()
+  return () => {
+    dispatch((uiActions as any).setBalanceDetailExpanded(!uiState.balanceDetailExpanded))
+  }
+}
