@@ -11,6 +11,7 @@ export interface DeviceContextType {
   isDesktopScreenSize: boolean
   platform: string
   hasBottomButton: boolean
+  cardColumnsInList: number
 }
 
 const initContext = {
@@ -24,6 +25,7 @@ const initContext = {
   isDesktopScreenSize: false,
   platform: 'unknown',
   hasBottomButton: false,
+  cardColumnsInList: 2,
 }
 
 export const DeviceContext = React.createContext<DeviceContextType>(initContext)
