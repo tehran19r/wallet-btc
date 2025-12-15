@@ -1,0 +1,85 @@
+import { Card, Column, Content, Header, Layout, Text } from '@/ui/components';
+import { useDeveloperMode, useDevice, useI18n, useNavigation } from '@unisat/wallet-state';
+
+export default function AddKeyringScreen() {
+  const nav = useNavigation();
+  const { t } = useI18n();
+  const developerMode = useDeveloperMode();
+
+  const { isExtensionInExpandView } = useDevice();
+
+  return (
+    <Layout>
+      <Header onBack={() => nav.goBack()} title={t('create_a_new_wallet')} />
+      <Content>
+        <Column>
+          <Text text={t('create_wallet')} preset="regular-bold" />
+
+          <Card
+            justifyCenter
+            onClick={(e) => {
+              nav.navigate('CreateHDWalletScreen', { isImport: false });
+            }}>
+            <Column full justifyCenter>
+              <Text text={t('create_with_mnemonics_12words')} size="sm" />
+            </Column>
+          </Card>
+
+          <Text text={t('restore_wallet')} preset="regular-bold" mt="lg" />
+
+          <Card
+            justifyCenter
+            onClick={(e) => {
+              nav.navigate('CreateHDWalletScreen', { isImport: true });
+            }}>
+            <Column full justifyCenter>
+              <Text text={t('restore_from_mnemonics_12words24words')} size="sm" />
+            </Column>
+          </Card>
+
+          <Card
+            justifyCenter
+            onClick={(e) => {
+              nav.navigate('CreateSimpleWalletScreen');
+            }}>
+            <Column full justifyCenter>
+              <Text text={t('restore_from_single_private_key')} size="sm" />
+            </Column>
+          </Card>
+
+          <Text text={t('connect_to_hardware_wallet')} preset="regular-bold" mt="lg" />
+
+          <Card
+            justifyCenter
+            onClick={() => {
+              if (isExtensionInExpandView) {
+                nav.navigate('CreateKeystoneWalletScreen');
+              } else {
+                window.open('#/account/create-keystone-wallet');
+              }
+            }}>
+            <Column full justifyCenter>
+              <Text text={t('keystone_wallet')} size="sm" />
+            </Column>
+          </Card>
+
+          {developerMode && (
+            <>
+              <Text text={t('cold_wallet')} preset="regular-bold" mt="lg" />
+
+              <Card
+                justifyCenter
+                onClick={() => {
+                  nav.navigate('CreateColdWalletScreen');
+                }}>
+                <Column full justifyCenter>
+                  <Text text={t('create_cold_wallet')} size="sm" />
+                </Column>
+              </Card>
+            </>
+          )}
+        </Column>
+      </Content>
+    </Layout>
+  );
+}
