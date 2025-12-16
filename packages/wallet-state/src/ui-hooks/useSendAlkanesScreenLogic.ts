@@ -6,7 +6,7 @@ import {
   TxType,
   UserToSignInput,
 } from '@unisat/wallet-shared'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n, useNavigation, useTools, useWallet } from 'src/context'
 import { useCurrentAccount, useFeeRateBar, usePushBitcoinTxCallback } from 'src/hooks'
 import { isValidAddress } from 'src/utils/bitcoin-utils'
@@ -44,6 +44,13 @@ export function useSendAlkanesScreenLogic() {
   const [availableBalance, setAvailableBalance] = useState(tokenBalance.amount)
   const [error, setError] = useState('')
 
+  const totalBalanceStr = useMemo(() => {
+    return bnUtils.toDecimalAmount(tokenBalance.amount, tokenBalance.divisibility)
+  }, [tokenBalance])
+  const availableBalanceStr = useMemo(() => {
+    return bnUtils.toDecimalAmount(availableBalance, tokenBalance?.divisibility)
+  }, [availableBalance, tokenBalance])
+
   const currentAccount = useCurrentAccount()
 
   const tools = useTools()
@@ -80,7 +87,7 @@ export function useSendAlkanesScreenLogic() {
 
     const sendingAmount = bnUtils.fromDecimalAmount(inputAmount, tokenBalance.divisibility)
 
-    if (sendingAmount === '0') {
+    if (bnUtils.compareAmount(sendingAmount, '0') <= 0) {
       return
     }
 
@@ -108,7 +115,11 @@ export function useSendAlkanesScreenLogic() {
 
   const pushBitcoinTx = usePushBitcoinTxCallback()
 
-  const onConfirm = async () => {
+  const onClickBack = () => {
+    nav.goBack()
+  }
+
+  const onClickNext = async () => {
     tools.showLoading(true)
     try {
       const step1 = await wallet.createAlkanesSendTx({
@@ -178,13 +189,20 @@ export function useSendAlkanesScreenLogic() {
     tokenBalance,
     tokenInfo,
     toInfo,
+    totalBalanceStr,
+    availableBalanceStr,
+
     inputAmount,
-    availableBalance,
     disabled,
     error,
+
+    // actions
     setToInfo,
     setInputAmount,
-    onConfirm,
+    onClickBack,
+    onClickNext,
+
+    // sign psbt actions
     onSignPsbtHandleConfirm,
     onSignPsbtHandleCancel,
     onSignPsbtHandleBack,

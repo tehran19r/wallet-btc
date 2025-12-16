@@ -103,7 +103,7 @@ export function useSendRunesScreenLogic() {
       return
     }
 
-    if (inputAmount === '0') {
+    if (bnUtils.compareAmount(runeAmount, '0') <= 0) {
       return
     }
 
@@ -147,6 +147,16 @@ export function useSendRunesScreenLogic() {
       })
   }, [toInfo, inputAmount, feeRate, outputValue, minOutputValue])
 
+  const totalBalanceStr = useMemo(() => {
+    return bnUtils.toDecimalAmount(runeBalance.amount, runeBalance.divisibility)
+  }, [runeBalance])
+  const availableBalanceStr = useMemo(() => {
+    return bnUtils.toDecimalAmount(availableBalance, runeBalance?.divisibility)
+  }, [availableBalance, runeBalance])
+
+  const onClickBack = () => {
+    nav.goBack()
+  }
   const onClickNext = () => {
     if (rawTxInfo) {
       nav.navigate('TxConfirmScreen', { rawTxInfo })
@@ -154,19 +164,24 @@ export function useSendRunesScreenLogic() {
   }
 
   return {
-    runeBalance,
+    // info
     runeInfo,
     inputAmount,
+    totalBalanceStr,
+    availableBalanceStr,
+
     setInputAmount,
     disabled,
     toInfo,
     setToInfo,
-    availableBalance,
     error,
     defaultOutputValue,
     minOutputValue,
     setOutputValue,
     t,
+
+    // actions
+    onClickBack,
     onClickNext,
   }
 }

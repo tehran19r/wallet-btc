@@ -4,41 +4,35 @@ import { OutputValueBar } from '@/ui/components/OutputValueBar';
 import { TickUsdWithoutPrice, TokenType } from '@/ui/components/TickUsd';
 import { colors } from '@/ui/theme/colors';
 import { showLongNumber } from '@/ui/utils';
-import { bnUtils } from '@unisat/base-utils';
 import { useSendRunesScreenLogic } from '@unisat/wallet-state';
 
 export default function SendRunesScreen() {
   const {
-    runeBalance,
     runeInfo,
     inputAmount,
+    totalBalanceStr,
+    availableBalanceStr,
+
     setInputAmount,
     disabled,
     toInfo,
     setToInfo,
-    availableBalance,
     error,
     defaultOutputValue,
     minOutputValue,
     setOutputValue,
     t,
+    onClickBack,
     onClickNext
   } = useSendRunesScreenLogic();
 
   return (
     <Layout>
-      <Header
-        onBack={() => {
-          window.history.go(-1);
-        }}
-        title={t('send_runes')}
-      />
+      <Header onBack={onClickBack} title={t('send_runes')} />
       <Content>
         <Row justifyCenter>
           <Text
-            text={`${showLongNumber(bnUtils.toDecimalAmount(runeBalance.amount, runeBalance.divisibility))} ${
-              runeInfo.symbol
-            }`}
+            text={`${showLongNumber(totalBalanceStr)} ${runeInfo.symbol}`}
             preset="bold"
             textCenter
             size="xxl"
@@ -48,7 +42,7 @@ export default function SendRunesScreen() {
         <Row justifyCenter fullX style={{ marginTop: -12, marginBottom: -12 }}>
           <TickUsdWithoutPrice
             tick={runeInfo.spacedRune}
-            balance={bnUtils.toDecimalAmount(runeBalance.amount, runeBalance.divisibility)}
+            balance={totalBalanceStr}
             type={TokenType.RUNES}
             size={'md'}
           />
@@ -73,17 +67,10 @@ export default function SendRunesScreen() {
             <Row
               itemsCenter
               onClick={() => {
-                setInputAmount(bnUtils.toDecimalAmount(availableBalance, runeBalance.divisibility));
+                setInputAmount(availableBalanceStr);
               }}>
               <Text text={t('max')} preset="sub" style={{ color: colors.white_muted }} />
-              <Text
-                text={`${showLongNumber(bnUtils.toDecimalAmount(availableBalance, runeBalance.divisibility))} ${
-                  runeInfo.symbol
-                }`}
-                preset="bold"
-                size="sm"
-                wrap
-              />
+              <Text text={`${showLongNumber(availableBalanceStr)} ${runeInfo.symbol}`} preset="bold" size="sm" wrap />
             </Row>
           </Row>
           <Input

@@ -3,7 +3,6 @@ import { FeeRateBar } from '@/ui/components/FeeRateBar';
 import { TickUsdWithoutPrice, TokenType } from '@/ui/components/TickUsd';
 import { colors } from '@/ui/theme/colors';
 import { showLongNumber } from '@/ui/utils';
-import { bnUtils } from '@unisat/base-utils';
 import { SendAlkanesScreenStep, useSendAlkanesScreenLogic } from '@unisat/wallet-state';
 
 import { SignPsbt } from '../Approval/components';
@@ -15,13 +14,16 @@ export default function SendAlkanesScreen() {
     tokenBalance,
     tokenInfo,
     toInfo,
+    totalBalanceStr,
+    availableBalanceStr,
+
     inputAmount,
-    availableBalance,
     disabled,
     error,
     setToInfo,
     setInputAmount,
-    onConfirm,
+    onClickBack,
+    onClickNext,
     onSignPsbtHandleConfirm,
     onSignPsbtHandleCancel,
     onSignPsbtHandleBack,
@@ -40,18 +42,11 @@ export default function SendAlkanesScreen() {
 
   return (
     <Layout>
-      <Header
-        onBack={() => {
-          window.history.go(-1);
-        }}
-        title={t('send_alkanes')}
-      />
+      <Header onBack={onClickBack} title={t('send_alkanes')} />
       <Content>
         <Row justifyCenter>
           <Text
-            text={`${showLongNumber(bnUtils.toDecimalAmount(tokenBalance.amount, tokenBalance.divisibility))} ${
-              tokenInfo.symbol
-            }`}
+            text={`${showLongNumber(totalBalanceStr)} ${tokenInfo.symbol}`}
             preset="bold"
             textCenter
             size="xxl"
@@ -61,7 +56,7 @@ export default function SendAlkanesScreen() {
         <Row justifyCenter fullX style={{ marginTop: -12, marginBottom: -12 }}>
           <TickUsdWithoutPrice
             tick={tokenBalance.alkaneid}
-            balance={bnUtils.toDecimalAmount(tokenBalance.amount, tokenBalance.divisibility)}
+            balance={totalBalanceStr}
             type={TokenType.ALKANES}
             size={'md'}
           />
@@ -86,17 +81,10 @@ export default function SendAlkanesScreen() {
             <Row
               itemsCenter
               onClick={() => {
-                setInputAmount(bnUtils.toDecimalAmount(availableBalance, tokenBalance.divisibility));
+                setInputAmount(availableBalanceStr);
               }}>
               <Text text={t('max')} preset="sub" style={{ color: colors.white_muted }} />
-              <Text
-                text={`${showLongNumber(bnUtils.toDecimalAmount(availableBalance, tokenBalance.divisibility))} ${
-                  tokenInfo.symbol
-                }`}
-                preset="bold"
-                size="sm"
-                wrap
-              />
+              <Text text={`${showLongNumber(availableBalanceStr)} ${tokenInfo.symbol}`} preset="bold" size="sm" wrap />
             </Row>
           </Row>
           <Input
@@ -116,7 +104,7 @@ export default function SendAlkanesScreen() {
 
         {error && <Text text={error} color="error" />}
 
-        <Button disabled={disabled} preset="primary" text={t('next')} onClick={onConfirm}></Button>
+        <Button disabled={disabled} preset="primary" text={t('next')} onClick={onClickNext}></Button>
       </Content>
     </Layout>
   );
