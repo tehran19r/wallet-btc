@@ -136,11 +136,6 @@ export interface WalletController {
     mnemonic: string
     passphrase: string
   }>
-  getMnemonicsForBackup(keyring: WalletKeyring): Promise<{
-    hdPath: string
-    mnemonic: string
-    passphrase: string
-  }>
   createKeyringWithPrivateKey(
     data: string,
     addressType: AddressType,

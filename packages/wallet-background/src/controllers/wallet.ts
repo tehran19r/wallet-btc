@@ -319,16 +319,6 @@ export class WalletController extends BaseController {
     }
   }
 
-  getMnemonicsForBackup = async (keyring: WalletKeyring) => {
-    const originKeyring = keyringService.keyrings[keyring.index]!
-    const serialized = await originKeyring.serialize()
-    return {
-      mnemonic: serialized.mnemonic,
-      hdPath: serialized.hdPath,
-      passphrase: serialized.passphrase,
-    }
-  }
-
   createKeyringWithPrivateKey = async (
     data: string,
     addressType: AddressType,
