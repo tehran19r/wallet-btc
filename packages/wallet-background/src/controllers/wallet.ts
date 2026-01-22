@@ -1,5 +1,4 @@
 import { tapleafHash } from 'bitcoinjs-lib/src/payments/bip341.js'
-import { pubkeyInScript } from 'bitcoinjs-lib/src/psbt/psbtutils.js'
 import bitcore from 'bitcore-lib'
 
 import {
@@ -27,19 +26,38 @@ import {
   UTXO_DUST,
 } from '@unisat/wallet-bitcoin'
 import {
+  Account,
+  AddressUserToSignInput,
   bgI18n,
+  BitcoinBalance,
+  BRC20HistoryItem,
   BUS_EVENTS,
   BUS_METHODS,
   CAT_VERSION,
   CHAINS_MAP,
   ConnectedSite,
+  CosmosBalance,
+  CosmosSignDataType,
+  DummyTxType,
   getLockTimeInfo,
   PlatformEnv,
+  PsbtActionDetailType,
+  PsbtActionInfo,
+  PsbtActionType,
+  PublicKeyUserToSignInput,
   RateUsStatus,
   SESSION_EVENTS,
+  SignedData,
+  SignedMessage,
+  SignMessageType,
+  SignPsbtOptions,
   t,
+  ToSignData,
+  ToSignMessage,
+  UTXO,
+  WalletKeyring,
 } from '@unisat/wallet-shared'
-import { AddressType, ChainType } from '@unisat/wallet-types'
+import { AddressType, ChainType, NetworkType } from '@unisat/wallet-types'
 import {
   contactBookService,
   keyringService,
@@ -49,24 +67,11 @@ import {
   sessionService,
   walletApiService,
 } from '../services'
-import {
-  Account,
-  AddressUserToSignInput,
-  BitcoinBalance,
-  BRC20HistoryItem,
-  CosmosBalance,
-  CosmosSignDataType,
-  NetworkType,
-  PublicKeyUserToSignInput,
-  SignPsbtOptions,
-  UTXO,
-  WalletKeyring,
-} from '../shared/types'
 import { getChainInfo } from '../shared/utils'
 import { bgEventBus } from '../utils/eventBus'
-import { psbtFromString } from '../utils/psbt-utils'
+import { getEstimateFee, psbtFromString } from '../utils/psbt-utils'
 
-import { bnUtils } from '@unisat/base-utils'
+import { baseUtils, bnUtils, paramsUtils } from '@unisat/base-utils'
 import {
   ADDRESS_TYPES,
   AddressFlagType,
@@ -89,15 +94,13 @@ const caculateTapLeafHash = (input: any, pubkey: Buffer) => {
   if (input.tapInternalKey && !input.tapLeafScript) {
     return []
   }
-  const tapLeafHashes = (input.tapLeafScript || [])
-    .filter(tapLeaf => pubkeyInScript(pubkey, tapLeaf.script))
-    .map(tapLeaf => {
-      const hash = tapleafHash({
-        output: tapLeaf.script,
-        version: tapLeaf.leafVersion,
-      })
-      return Object.assign({ hash }, tapLeaf)
+  const tapLeafHashes = (input.tapLeafScript || []).map(tapLeaf => {
+    const hash = tapleafHash({
+      output: tapLeaf.script,
+      version: tapLeaf.leafVersion,
     })
+    return Object.assign({ hash }, tapLeaf)
+  })
 
   return tapLeafHashes.map(each => each.hash)
 }
@@ -764,7 +767,7 @@ export class WalletController extends BaseController {
     return toSignInputs
   }
 
-  signPsbt = async (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], autoFinalized: boolean) => {
+  formatPsbt = async (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], autoFinalized: boolean) => {
     const account = await this.getCurrentAccount()
     if (!account) throw new Error('no current account')
 
@@ -803,7 +806,19 @@ export class WalletController extends BaseController {
         const keysString = 'chain'
         // use ff as the keyType in the psbt global unknown
         const key = Buffer.from('ff' + Buffer.from(keysString).toString('hex'), 'hex')
-        psbt.addUnknownKeyValToGlobal({ key, value: Buffer.from(chain.unit.toLowerCase()) })
+
+        // check if already added
+        const existing =
+          psbt.data.globalMap.unknownKeyVals &&
+          psbt.data.globalMap.unknownKeyVals.find(ukv => {
+            return ukv.key.toString('hex') === key.toString('hex')
+          })
+        if (existing) {
+          // already added
+          // ignore
+        } else {
+          psbt.addUnknownKeyValToGlobal({ key, value: Buffer.from(chain.unit.toLowerCase()) })
+        }
       }
     }
 
@@ -895,10 +910,20 @@ export class WalletController extends BaseController {
       }
     })
 
-    // For Keystone and cold wallets, return the prepared PSBT without actual signing
-    if (isKeystone || isColdWallet) {
-      return psbt
+    return {
+      psbt,
+      toSignInputs,
+      autoFinalized,
     }
+  }
+
+  _signPsbt = async (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[], autoFinalized: boolean) => {
+    const account = await this.getCurrentAccount()
+    if (!account) throw new Error('no current account')
+
+    const keyring = await this.getCurrentKeyring()
+    if (!keyring) throw new Error('no current keyring')
+    const _keyring = keyringService.keyrings[keyring.index]!
 
     psbt = await keyringService.signTransaction(_keyring, psbt, toSignInputs as any)
 
@@ -911,36 +936,47 @@ export class WalletController extends BaseController {
     return psbt
   }
 
-  signPsbtWithHex = async (
-    psbtHex: string,
-    toSignInputs: ToSignInput[],
-    autoFinalized: boolean
-  ) => {
-    const psbt = psbtFromString(psbtHex)
-    await this.signPsbt(psbt, toSignInputs, autoFinalized)
-    return psbt.toHex()
+  // abstract wallet function
+  signPsbt = async (psbt: bitcoin.Psbt, opts?: SignPsbtOptions): Promise<bitcoin.Psbt> => {
+    const res = await this.formatPsbt(psbt, opts?.toSignInputs as any, opts?.autoFinalized as any)
+    const signedPsbt = await this._signPsbt(res.psbt, res.toSignInputs, res.autoFinalized)
+    return signedPsbt
   }
 
-  signMessage = async (text: string) => {
-    if (!text || text.length > 10000) {
+  // local sign function
+  signPsbtV2 = async (toSignData: ToSignData): Promise<SignedData> => {
+    const psbt = psbtFromString(toSignData.psbtHex)
+    await this._signPsbt(psbt, toSignData.toSignInputs, toSignData.autoFinalized!)
+    return {
+      psbtHex: psbt.toHex(),
+    }
+  }
+
+  signMessage = async (params: ToSignMessage): Promise<SignedMessage> => {
+    if (!params.text || params.text.length > 10000) {
       throw new Error('Invalid message length')
     }
 
     const account = preferenceService.getCurrentAccount()
     if (!account) throw new Error('no current account')
-    return keyringService.signMessage(account.pubkey, account.type, text)
-  }
 
-  signBIP322Simple = async (text: string) => {
-    const account = preferenceService.getCurrentAccount()
-    if (!account) throw new Error('no current account')
     const networkType = this.getNetworkType()
-    return signMessageOfBIP322Simple({
-      message: text,
-      address: account.address,
-      networkType,
-      wallet: this as any,
-    })
+    if (params.type === SignMessageType.BIP322_SIMPLE) {
+      const signature = await signMessageOfBIP322Simple({
+        message: params.text,
+        address: account.address,
+        networkType,
+        wallet: this as any,
+      })
+      return {
+        signature,
+      }
+    } else {
+      const signature = await keyringService.signMessage(account.pubkey, account.type, params.text)
+      return {
+        signature,
+      }
+    }
   }
 
   signData = async (data: string, type = 'ecdsa') => {
@@ -1128,7 +1164,7 @@ export class WalletController extends BaseController {
     return btcUtxos
   }
 
-  sendBTC = async ({
+  createSendBTCPsbt = async ({
     to,
     amount,
     feeRate,
@@ -1142,7 +1178,12 @@ export class WalletController extends BaseController {
     btcUtxos?: UnspentOutput[]
     memo?: string
     memos?: string[]
-  }) => {
+  }): Promise<{
+    psbtHex: string
+    toSignInputs: ToSignInput[]
+  }> => {
+    amount = paramsUtils.formatAmount(amount)
+
     const account = preferenceService.getCurrentAccount()
     if (!account) throw new Error('no current account')
 
@@ -1170,10 +1211,36 @@ export class WalletController extends BaseController {
       memos: memos!,
     })
 
-    return this.getSignedResult(psbt, toSignInputs)
+    const title = `${t('send')} ${this.getBTCUnit()}`
+
+    const toSignData = await this.getToSignData({
+      psbtHex: psbt.toHex(),
+      options: {
+        toSignInputs: toSignInputs as any,
+        autoFinalized: true,
+      },
+      action: {
+        name: title,
+        description: '',
+        details: [
+          {
+            label: t('to'),
+            value: to,
+            type: PsbtActionDetailType.ADDRESS,
+          },
+          {
+            label: t('amount'),
+            value: amount,
+            type: PsbtActionDetailType.SATOSHIS,
+          },
+        ],
+        type: PsbtActionType.CUSTOM,
+      },
+    })
+    return toSignData
   }
 
-  sendAllBTC = async ({
+  createSendAllBTCPsbt = async ({
     to,
     feeRate,
     btcUtxos,
@@ -1181,7 +1248,10 @@ export class WalletController extends BaseController {
     to: string
     feeRate: number
     btcUtxos?: UnspentOutput[]
-  }) => {
+  }): Promise<{
+    psbtHex: string
+    toSignInputs: ToSignInput[]
+  }> => {
     const account = preferenceService.getCurrentAccount()
     if (!account) throw new Error('no current account')
 
@@ -1201,10 +1271,41 @@ export class WalletController extends BaseController {
       networkType,
       feeRate,
     })
-    return this.getSignedResult(psbt, toSignInputs)
+
+    let totalInput = 0
+    btcUtxos.forEach(v => {
+      totalInput += v.satoshis
+    })
+
+    const title = `${t('send')} ${this.getBTCUnit()}`
+    const toSignData = await this.getToSignData({
+      psbtHex: psbt.toHex(),
+      options: {
+        toSignInputs: toSignInputs as any,
+        autoFinalized: true,
+      },
+      action: {
+        name: title,
+        description: '',
+        details: [
+          {
+            label: t('to'),
+            value: to,
+            type: PsbtActionDetailType.ADDRESS,
+          },
+          {
+            label: t('amount'),
+            value: totalInput,
+            type: PsbtActionDetailType.SATOSHIS,
+          },
+        ],
+        type: PsbtActionType.CUSTOM,
+      },
+    })
+    return toSignData
   }
 
-  sendOrdinalsInscription = async ({
+  createSendInscriptionPsbt = async ({
     to,
     inscriptionId,
     feeRate,
@@ -1216,7 +1317,7 @@ export class WalletController extends BaseController {
     feeRate: number
     outputValue?: number
     btcUtxos?: txHelpers.UnspentOutput[]
-  }) => {
+  }): Promise<ToSignData> => {
     const account = preferenceService.getCurrentAccount()
     if (!account) throw new Error('no current account')
 
@@ -1252,10 +1353,34 @@ export class WalletController extends BaseController {
       enableMixed: true,
     })
 
-    return this.getSignedResult(psbt, toSignInputs)
+    const toSignData = await this.getToSignData({
+      psbtHex: psbt.toHex(),
+      options: {
+        toSignInputs: toSignInputs as any,
+        autoFinalized: false,
+      },
+      action: {
+        name: t('send_inscription2'),
+        description: '',
+        details: [
+          {
+            label: t('to'),
+            type: PsbtActionDetailType.ADDRESS,
+            value: baseUtils.shortAddress(to),
+          },
+          {
+            label: t('Approval_SpendInscription'),
+            type: PsbtActionDetailType.INSCRIPTION,
+            value: inscriptionId,
+          },
+        ],
+        type: PsbtActionType.CUSTOM,
+      },
+    })
+    return toSignData
   }
 
-  sendOrdinalsInscriptions = async ({
+  createSendMultipleInscriptionsPsbt = async ({
     to,
     inscriptionIds,
     feeRate,
@@ -1266,7 +1391,7 @@ export class WalletController extends BaseController {
     utxos: UTXO[]
     feeRate: number
     btcUtxos?: txHelpers.UnspentOutput[]
-  }) => {
+  }): Promise<ToSignData> => {
     const account = preferenceService.getCurrentAccount()
     if (!account) throw new Error('no current account')
 
@@ -1313,10 +1438,33 @@ export class WalletController extends BaseController {
       feeRate,
     })
 
-    return this.getSignedResult(psbt, toSignInputs)
+    const toSignData = await this.getToSignData({
+      psbtHex: psbt.toHex(),
+      options: {
+        toSignInputs: toSignInputs as any,
+        autoFinalized: false,
+      },
+      action: {
+        name: t('send_inscription2'),
+        description: '',
+        details: [
+          {
+            label: t('to'),
+            value: to,
+            type: PsbtActionDetailType.ADDRESS,
+          },
+          {
+            label: t('spending_assets'),
+            value: `${inscriptionIds.length} ${t('inscription')}`,
+          },
+        ],
+        type: PsbtActionType.CUSTOM,
+      },
+    })
+    return toSignData
   }
 
-  splitOrdinalsInscription = async ({
+  createSplitInscriptionPsbt = async ({
     inscriptionId,
     feeRate,
     outputValue,
@@ -1327,7 +1475,7 @@ export class WalletController extends BaseController {
     feeRate: number
     outputValue: number
     btcUtxos?: txHelpers.UnspentOutput[]
-  }) => {
+  }): Promise<ToSignData> => {
     const account = preferenceService.getCurrentAccount()
     if (!account) throw new Error('no current account')
 
@@ -1353,8 +1501,19 @@ export class WalletController extends BaseController {
       outputValue,
     })
 
-    const res = await this.getSignedResult(psbt, toSignInputs)
-    return { ...res, splitedCount }
+    const toSignData = await this.getToSignData({
+      psbtHex: psbt.toHex(),
+      options: {
+        toSignInputs: toSignInputs as any,
+        autoFinalized: false,
+      },
+      action: {
+        name: t('Split inscriptions'),
+        description: '',
+        type: PsbtActionType.CUSTOM,
+      },
+    })
+    return toSignData
   }
 
   pushTx = async (txData: string) => {
@@ -1721,6 +1880,8 @@ export class WalletController extends BaseController {
     feeRate: number,
     outputValue: number
   ) => {
+    amount = paramsUtils.formatAmount(amount)
+
     return walletApiService.brc20.inscribeBRC20Transfer(address, tick, amount, feeRate, outputValue)
   }
 
@@ -1953,9 +2114,8 @@ export class WalletController extends BaseController {
         address: account.address,
         networkType: this.getNetworkType(),
       })
-      const toSignInputs = await this.formatOptionsToSignInputs(psbt)
-      await this.signPsbt(psbt, toSignInputs, false)
-      return await this.genSignPsbtUr(psbt.toHex())
+      const toSignData = await this.getToSignData({ psbtHex: psbt.toHex() })
+      return await this.genSignPsbtUr(toSignData.psbtHex)
     }
     const { account, keyring } = await this.checkKeyringMethod('genSignMsgUr')
     return await keyring.genSignMsgUr!(account.pubkey, text)
@@ -2035,7 +2195,7 @@ export class WalletController extends BaseController {
     return tokenSummary
   }
 
-  sendRunes = async ({
+  createSendRunesPsbt = async ({
     to,
     runeid,
     runeAmount,
@@ -2051,7 +2211,12 @@ export class WalletController extends BaseController {
     btcUtxos?: UnspentOutput[]
     assetUtxos: UnspentOutput[]
     outputValue?: number
-  }) => {
+  }): Promise<ToSignData> => {
+    runeAmount = paramsUtils.formatAmount(runeAmount)
+    if (runeAmount === '0') {
+      throw new Error('Amount must be greater than 0')
+    }
+
     const account = preferenceService.getCurrentAccount()
     if (!account) throw new Error('no current account')
 
@@ -2123,12 +2288,64 @@ export class WalletController extends BaseController {
       outputValue: outputValue || UTXO_DUST,
     })
 
-    return this.getSignedResult(psbt, toSignInputs)
+    const toSignData = await this.getToSignData({
+      psbtHex: psbt.toHex(),
+      options: {
+        toSignInputs: toSignInputs as any,
+        autoFinalized: false,
+      },
+      action: {
+        name: t('send_runes'),
+        description: '',
+        details: [
+          {
+            label: t('to'),
+            type: PsbtActionDetailType.ADDRESS,
+            value: to,
+          },
+          {
+            label: t('runes'),
+            type: PsbtActionDetailType.RUNES,
+            value: {
+              runeid,
+              runeAmount,
+            },
+          },
+        ],
+        type: PsbtActionType.CUSTOM,
+      },
+    })
+    return toSignData
+  }
+
+  getToSignData = async ({
+    psbtHex,
+    options,
+    action,
+  }: {
+    psbtHex: string
+    options?: SignPsbtOptions
+    action?: PsbtActionInfo
+  }): Promise<ToSignData> => {
+    const toSignInputs = await this.formatOptionsToSignInputs(psbtHex, options)
+    const result = await this.formatPsbt(bitcoin.Psbt.fromHex(psbtHex), toSignInputs, false)
+    return {
+      psbtHex: result.psbt.toHex(),
+      toSignInputs: result.toSignInputs,
+      autoFinalized: options?.autoFinalized || false,
+      action: action
+        ? action
+        : {
+            name: '',
+            description: '',
+            type: PsbtActionType.DEFAULT,
+          },
+    }
   }
 
   getSignedResult = async (psbt: bitcoin.Psbt, toSignInputs: ToSignInput[]) => {
     this.setPsbtSignNonSegwitEnable(psbt, true)
-    await this.signPsbt(psbt, toSignInputs, true)
+    await this._signPsbt(psbt, toSignInputs, true)
     this.setPsbtSignNonSegwitEnable(psbt, false)
 
     const psbtHex = psbt.toHex()
@@ -2249,6 +2466,8 @@ export class WalletController extends BaseController {
     tokenAmount: string,
     feeRate: number
   ) => {
+    tokenAmount = paramsUtils.formatAmount(tokenAmount)
+
     const currentAccount = await this.getCurrentAccount()
     if (!currentAccount) {
       return
@@ -2263,35 +2482,56 @@ export class WalletController extends BaseController {
       tokenAmount,
       feeRate
     )
-    return _res
+
+    const toSignData = await this.getToSignData({
+      psbtHex: bitcoin.Psbt.fromBase64(_res.commitTx).toHex(),
+      options: {
+        toSignInputs: _res.toSignInputs,
+        autoFinalized: false,
+      },
+      action: {
+        name: t('send_cat20'),
+        description: '',
+        type: PsbtActionType.CUSTOM,
+      },
+    })
+
+    return {
+      toSignData,
+      feeRate: _res.feeRate,
+      id: _res.id,
+    }
   }
 
-  transferCAT20Step2 = async (
-    version: CAT_VERSION,
-    transferId: string,
-    commitTx: string,
-    toSignInputs: ToSignInput[]
-  ) => {
-    const networkType = this.getNetworkType()
-    const psbtNetwork = toPsbtNetwork(networkType)
-    const psbt = bitcoin.Psbt.fromBase64(commitTx, { network: psbtNetwork })
-    await this.signPsbt(psbt, toSignInputs, true)
-    const _res = await walletApiService.cat.transferCAT20Step2(version, transferId, psbt.toBase64())
-    return _res
+  transferCAT20Step2 = async (version: CAT_VERSION, transferId: string, psbtHex: string) => {
+    const psbt = psbtFromString(psbtHex)
+    try {
+      psbt.finalizeAllInputs()
+    } catch (e) {
+      // skip
+    }
+    const psbtBase64 = psbt.toBase64()
+    const _res = await walletApiService.cat.transferCAT20Step2(version, transferId, psbtBase64)
+    const toSignData = await this.getToSignData({
+      psbtHex: bitcoin.Psbt.fromBase64(_res.revealTx).toHex(),
+      options: {
+        toSignInputs: _res.toSignInputs,
+        autoFinalized: false,
+      },
+    })
+
+    return {
+      toSignData,
+    }
   }
 
-  transferCAT20Step3 = async (
-    version: CAT_VERSION,
-    transferId: string,
-    revealTx: string,
-    toSignInputs: ToSignInput[]
-  ) => {
-    const networkType = this.getNetworkType()
-    const psbtNetwork = toPsbtNetwork(networkType)
-    const psbt = bitcoin.Psbt.fromBase64(revealTx, { network: psbtNetwork })
-    await this.signPsbt(psbt, toSignInputs, false)
-    const _res = await walletApiService.cat.transferCAT20Step3(version, transferId, psbt.toBase64())
-    return _res
+  transferCAT20Step3 = async (version: CAT_VERSION, transferId: string, psbtHex: string) => {
+    const psbt = psbtFromString(psbtHex)
+    const psbtBase64 = psbt.toBase64()
+    const _res = await walletApiService.cat.transferCAT20Step3(version, transferId, psbtBase64)
+    return {
+      txid: _res.txid,
+    }
   }
 
   mergeCAT20Prepare = async (
@@ -2392,43 +2632,57 @@ export class WalletController extends BaseController {
       localId,
       feeRate
     )
-    return _res
+
+    const toSignData = await this.getToSignData({
+      psbtHex: bitcoin.Psbt.fromBase64(_res.commitTx).toHex(),
+      options: {
+        toSignInputs: _res.toSignInputs,
+        autoFinalized: false,
+      },
+      action: {
+        name: t('send_CAT721'),
+        description: '',
+        details: [],
+        type: PsbtActionType.CUSTOM,
+      },
+    })
+
+    return {
+      toSignData,
+      feeRate: _res.feeRate,
+      id: _res.id,
+    }
   }
 
-  transferCAT721Step2 = async (
-    version: CAT_VERSION,
-    transferId: string,
-    commitTx: string,
-    toSignInputs: ToSignInput[]
-  ) => {
-    const networkType = this.getNetworkType()
-    const psbtNetwork = toPsbtNetwork(networkType)
-    const psbt = bitcoin.Psbt.fromBase64(commitTx, { network: psbtNetwork })
-    await this.signPsbt(psbt, toSignInputs, true)
-    const _res = await walletApiService.cat.transferCAT721Step2(
-      version,
-      transferId,
-      psbt.toBase64()
-    )
-    return _res
+  transferCAT721Step2 = async (version: CAT_VERSION, transferId: string, psbtHex: string) => {
+    const psbt = psbtFromString(psbtHex)
+    try {
+      psbt.finalizeAllInputs()
+    } catch (e) {
+      // skip
+    }
+    const psbtBase64 = psbt.toBase64()
+    const _res = await walletApiService.cat.transferCAT721Step2(version, transferId, psbtBase64)
+    const toSignData = await this.getToSignData({
+      psbtHex: bitcoin.Psbt.fromBase64(_res.revealTx).toHex(),
+      options: {
+        toSignInputs: _res.toSignInputs,
+        autoFinalized: false,
+      },
+    })
+
+    return {
+      toSignData,
+    }
   }
 
-  transferCAT721Step3 = async (
-    version: CAT_VERSION,
-    transferId: string,
-    revealTx: string,
-    toSignInputs: ToSignInput[]
-  ) => {
-    const networkType = this.getNetworkType()
-    const psbtNetwork = toPsbtNetwork(networkType)
-    const psbt = bitcoin.Psbt.fromBase64(revealTx, { network: psbtNetwork })
-    await this.signPsbt(psbt, toSignInputs, false)
-    const _res = await walletApiService.cat.transferCAT721Step3(
-      version,
-      transferId,
-      psbt.toBase64()
-    )
-    return _res
+  transferCAT721Step3 = async (version: CAT_VERSION, transferId: string, psbtHex: string) => {
+    const psbt = psbtFromString(psbtHex)
+    const psbtBase64 = psbt.toBase64()
+    const _res = await walletApiService.cat.transferCAT721Step3(version, transferId, psbtBase64)
+    return {
+      txid: _res.txid,
+    }
   }
 
   getBuyCoinChannelList = async (coin: 'FB' | 'BTC') => {
@@ -2677,58 +2931,63 @@ export class WalletController extends BaseController {
     amount: string
     feeRate: number
   }) => {
-    return walletApiService.brc20.singleStepTransferBRC20Step1(params)
+    params.amount = paramsUtils.formatAmount(params.amount)
+
+    const result = await walletApiService.brc20.singleStepTransferBRC20Step1(params)
+    const toSignData = await this.getToSignData({
+      psbtHex: result.psbtHex,
+      options: {
+        toSignInputs: result.toSignInputs as any,
+        autoFinalized: true,
+      },
+    })
+    return {
+      orderId: result.orderId,
+      toSignData,
+    }
   }
 
-  singleStepTransferBRC20Step2 = async (params: {
-    orderId: string
-    commitTx: string
-    toSignInputs: ToSignInput[]
-    signed?: boolean
-  }) => {
+  singleStepTransferBRC20Step2 = async (params: { orderId: string; commitTx: string }) => {
     const networkType = this.getNetworkType()
     const psbtNetwork = toPsbtNetwork(networkType)
     const psbt = bitcoin.Psbt.fromHex(params.commitTx, { network: psbtNetwork })
-    if (!params.signed) {
-      // keystone already signed
-      await this.signPsbt(psbt, params.toSignInputs, true)
-    }
 
-    return walletApiService.brc20.singleStepTransferBRC20Step2({
+    const result = await walletApiService.brc20.singleStepTransferBRC20Step2({
       orderId: params.orderId,
       psbt: psbt.toBase64(),
     })
+
+    const toSignData = await this.getToSignData({
+      psbtHex: result.psbtHex,
+      options: {
+        toSignInputs: result.toSignInputs as any,
+        autoFinalized: false,
+      },
+    })
+    return {
+      toSignData,
+    }
   }
 
-  singleStepTransferBRC20Step3 = async (params: {
-    orderId: string
-    revealTx: string
-    toSignInputs: ToSignInput[]
-    signed?: boolean
-  }) => {
+  singleStepTransferBRC20Step3 = async (params: { orderId: string; revealTx: string }) => {
     const networkType = this.getNetworkType()
     const psbtNetwork = toPsbtNetwork(networkType)
     const psbt = bitcoin.Psbt.fromHex(params.revealTx, { network: psbtNetwork })
-    if (!params.signed) {
-      // keystone already signed
-      await this.signPsbt(psbt, params.toSignInputs, true)
-    }
 
-    return walletApiService.brc20.singleStepTransferBRC20Step3({
+    const result = await walletApiService.brc20.singleStepTransferBRC20Step3({
       orderId: params.orderId,
       psbt: psbt.toBase64(),
     })
+
+    return result
   }
 
-  sendCoinBypassHeadOffsets = async (
+  createSendBTCOffsetPsbt = async (
     tos: { address: string; satoshis: number }[],
     feeRate: number
-  ) => {
+  ): Promise<ToSignData> => {
     const currentAccount = await this.getCurrentAccount()
-    if (!currentAccount) {
-      console.error('No current account')
-      return
-    }
+    if (!currentAccount) throw new Error('no current account')
 
     const { psbtBase64, toSignInputs } =
       await walletApiService.bitcoin.createSendCoinBypassHeadOffsets(
@@ -2739,9 +2998,20 @@ export class WalletController extends BaseController {
       )
 
     const psbt = bitcoin.Psbt.fromBase64(psbtBase64)
-    return this.getSignedResult(psbt, toSignInputs)
+
+    const toSignData = await this.getToSignData({
+      psbtHex: psbt.toHex(),
+      options: {
+        toSignInputs: toSignInputs as any,
+        autoFinalized: true,
+      },
+    })
+
+    const estimatedFee = getEstimateFee(psbt, currentAccount.address, currentAccount.pubkey)
+    toSignData.estimatedFee = estimatedFee
+
+    return toSignData
   }
-  // createBabylonDeposit = async (amount: string) => {};
 
   getAlkanesList = async (address: string, currentPage: number, pageSize: number) => {
     const cursor = (currentPage - 1) * pageSize
@@ -2785,47 +3055,23 @@ export class WalletController extends BaseController {
     return tokenSummary
   }
 
-  createAlkanesSendTx = async (params: {
-    userAddress: string
-    userPubkey: string
-    receiver: string
-    alkaneid: string
-    amount: string
-    feeRate: number
-  }) => {
-    return walletApiService.alkanes.createAlkanesSendTx(params)
-  }
-
-  signAlkanesSendTx = async (params: { commitTx: string; toSignInputs: ToSignInput[] }) => {
-    const networkType = this.getNetworkType()
-    const psbtNetwork = toPsbtNetwork(networkType)
-    const psbt = bitcoin.Psbt.fromHex(params.commitTx, { network: psbtNetwork })
-    await this.signPsbt(psbt, params.toSignInputs, true)
-
-    const rawtx = psbt.extractTransaction(true).toHex()
-    const txid = await this.pushTx(rawtx)
-    return { txid }
-  }
-
-  sendAlkanes = async ({
+  createSendAlkanesPsbt = async ({
     to,
     alkaneid,
     amount,
     feeRate,
-    btcUtxos,
-    assetUtxos,
   }: {
     to: string
     alkaneid: string
     amount: string
     feeRate: number
-    btcUtxos?: UnspentOutput[]
-    assetUtxos?: UnspentOutput[]
-  }) => {
+  }): Promise<ToSignData> => {
+    amount = paramsUtils.formatAmount(amount)
+
     const account = preferenceService.getCurrentAccount()
     if (!account) throw new Error('no current account')
 
-    const txData = await this.createAlkanesSendTx({
+    const txData = await walletApiService.alkanes.createAlkanesSendTx({
       userAddress: account.address,
       userPubkey: account.pubkey,
       receiver: to,
@@ -2834,11 +3080,34 @@ export class WalletController extends BaseController {
       feeRate,
     })
 
-    const result = await this.signAlkanesSendTx({
-      commitTx: txData.psbtHex,
-      toSignInputs: txData.toSignInputs as any,
+    const toSignData = await this.getToSignData({
+      psbtHex: txData.psbtHex,
+      options: {
+        toSignInputs: txData.toSignInputs,
+        autoFinalized: false,
+      },
+      action: {
+        name: t('send_alkanes'),
+        description: '',
+        details: [
+          {
+            label: t('to'),
+            value: to,
+            type: PsbtActionDetailType.ADDRESS,
+          },
+          {
+            label: t('alkanes'),
+            value: {
+              alkaneid,
+              amount,
+            },
+            type: PsbtActionDetailType.ALKANES,
+          },
+        ],
+        type: PsbtActionType.CUSTOM,
+      },
     })
-    return result.txid
+    return toSignData
   }
 
   getAlkanesCollectionList = async (address: string, currentPage: number, pageSize: number) => {
@@ -2969,6 +3238,38 @@ export class WalletController extends BaseController {
       keyringService.keyrings.length - 1
     )
     await this.changeKeyring(keyring)
+  }
+
+  createDummyPsbt = async ({
+    txType,
+  }: {
+    txType: DummyTxType
+  }): Promise<{
+    psbtHex: string
+    toSignInputs: ToSignInput[]
+  }> => {
+    const account = preferenceService.getCurrentAccount()
+    if (!account) throw new Error('no current account')
+
+    const { psbt, toSignInputs } = txHelpers.createDummyTx({
+      txType,
+      address: account.address,
+      pubkey: account.pubkey,
+    })
+
+    const toSignData = await this.getToSignData({
+      psbtHex: psbt.toHex(),
+      options: {
+        toSignInputs: toSignInputs as any,
+        autoFinalized: false,
+      },
+    })
+    return toSignData
+  }
+
+  getBTCUnit() {
+    const chainType = this.getChainType()
+    return CHAINS_MAP[chainType]!.unit
   }
 }
 export default new WalletController()

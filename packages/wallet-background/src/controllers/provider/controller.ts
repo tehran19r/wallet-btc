@@ -1,6 +1,5 @@
-import { permissionService, sessionService, walletApiService } from '../../services'
+import { bitcoin, verifyMessageOfBIP322Simple } from '@unisat/wallet-bitcoin'
 import {
-  NetworkType,
   RequestMethodGetInscriptionsParams,
   RequestMethodSendBitcoinParams,
   RequestMethodSendInscriptionParams,
@@ -9,26 +8,30 @@ import {
   RequestMethodSignMessagesParams,
   RequestMethodSignPsbtParams,
   RequestMethodSignPsbtsParams,
-} from '../../shared/types'
+} from '@unisat/wallet-shared'
+import { permissionService, sessionService, walletApiService } from '../../services'
 import { getChainInfo, objToUint8Array } from '../../shared/utils'
 import { amountToSatoshis } from '../../utils/bitcoin-utils'
-import { bitcoin, toPsbtNetwork, verifyMessageOfBIP322Simple } from '@unisat/wallet-bitcoin'
 import BaseController from '../base'
 import wallet from '../wallet'
 
-import { formatPsbtHex } from '../../utils/psbt-utils'
 import {
-  encodeSignature,
   arbitrarySignDocToBytesHex,
   directSignDocToBytesHex,
+  encodeSignature,
 } from '@unisat/babylon-service'
 import {
-  NETWORK_TYPES,
   CHAINS,
   CHAINS_MAP,
+  NETWORK_TYPES,
   PlatformEnv,
   SESSION_EVENTS,
+  SignMessageResult,
+  SignMessageType,
+  SignPsbtResult,
 } from '@unisat/wallet-shared'
+import { NetworkType } from '@unisat/wallet-types'
+import { formatPsbtHex } from '../../utils/psbt-utils'
 
 class ProviderController extends BaseController {
   protected override onInitialize(): Promise<void> {
@@ -83,7 +86,8 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', [
     'SwitchNetwork',
-    req => {
+    // @ts-ignore
+    async req => {
       const network = req.data.params.network
       if (NETWORK_TYPES[NetworkType.MAINNET]!.validNames.includes(network)) {
         req.data.params.networkType = NetworkType.MAINNET
@@ -119,7 +123,7 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', [
     'SwitchChain',
-    req => {
+    async req => {
       const chainType = req.data.params.chain
       if (!CHAINS_MAP[chainType]) {
         throw new Error(
@@ -131,6 +135,7 @@ class ProviderController extends BaseController {
         // skip approval
         return true
       }
+      return false
     },
   ])
   switchChain = async req => {
@@ -209,7 +214,7 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', [
     'SignPsbt',
-    req => {
+    async req => {
       const params: RequestMethodSendBitcoinParams = req.data.params
       if (!params.sendBitcoinParams.toAddress) {
         throw new Error('toAddress is required')
@@ -228,7 +233,7 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', [
     'SignPsbt',
-    req => {
+    async req => {
       const params: RequestMethodSendInscriptionParams = req.data.params
       if (!params.sendInscriptionParams.toAddress) {
         throw new Error('toAddress is required')
@@ -247,7 +252,7 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', [
     'SignPsbt',
-    req => {
+    async req => {
       const params: RequestMethodSendRunesParams = req.data.params
       if (!params.sendRunesParams.toAddress) {
         throw new Error('toAddress is required')
@@ -268,42 +273,19 @@ class ProviderController extends BaseController {
   }
 
   @Reflect.metadata('APPROVAL', [
-    'SignText',
-    req => {
+    'SignMessage',
+    async req => {
       const params: RequestMethodSignMessageParams = req.data.params
       if (!params.text) {
         throw new Error('text is required')
       }
+      params.toSignMessages = [
+        { text: params.text, type: (params.type as any) || SignMessageType.ECDSA },
+      ]
     },
   ])
-  signMessage = async ({
-    data: {
-      params: { text, type },
-    },
-    approvalRes,
-  }) => {
-    if (approvalRes?.signature) {
-      return approvalRes.signature
-    }
-    if (type === 'bip322-simple') {
-      return wallet.signBIP322Simple(text)
-    } else {
-      return wallet.signMessage(text)
-    }
-  }
-
-  @Reflect.metadata('APPROVAL', [
-    'SignData',
-    () => {
-      // todo check text
-    },
-  ])
-  signData = async ({
-    data: {
-      params: { data, type },
-    },
-  }) => {
-    return wallet.signData(data, type)
+  signMessage = async ({ approvalRes }: { approvalRes: SignMessageResult }) => {
+    return approvalRes[0]!.signature
   }
 
   @Reflect.metadata('SAFE', true)
@@ -317,70 +299,51 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', [
     'SignPsbt',
-    req => {
+    async req => {
       const params: RequestMethodSignPsbtParams = req.data.params
       if (!params.psbtHex) {
         throw new Error('psbtHex is required')
       }
 
-      params.psbtHex = formatPsbtHex(params.psbtHex)
-    },
-  ])
-  signPsbt = async ({
-    data: {
-      params: { psbtHex, options },
-    },
-    approvalRes,
-  }) => {
-    if (approvalRes && approvalRes.signed == true) {
-      return approvalRes.psbtHex
-    }
-    const networkType = wallet.getNetworkType()
-    const psbtNetwork = toPsbtNetwork(networkType)
-    const psbt = bitcoin.Psbt.fromHex(psbtHex, { network: psbtNetwork })
-    const autoFinalized = options && options.autoFinalized == false ? false : true
-    const toSignInputs = await wallet.formatOptionsToSignInputs(psbtHex, options)
-    await wallet.signPsbt(psbt, toSignInputs, autoFinalized)
-    return psbt.toHex()
-  }
-
-  @Reflect.metadata('APPROVAL', [
-    'MultiSignPsbt',
-    req => {
-      const params: RequestMethodSignPsbtsParams = req.data.params
-      params.psbtHexs.forEach(psbtHex => {
-        if (!psbtHex) {
-          throw new Error('psbtHex is required')
-        }
+      const toSignData = await wallet.getToSignData({
+        psbtHex: params.psbtHex,
+        options: params.options,
       })
-
-      params.psbtHexs = params.psbtHexs.map(psbtHex => formatPsbtHex(psbtHex))
+      params.toSignDatas = [toSignData]
     },
   ])
-  multiSignPsbt = async ({
-    data: {
-      params: { psbtHexs, options },
-    },
-  }) => {
-    const account = await wallet.getCurrentAccount()
-    if (!account) throw null
-    const networkType = wallet.getNetworkType()
-    const psbtNetwork = toPsbtNetwork(networkType)
-    const result: string[] = []
-    for (let i = 0; i < psbtHexs.length; i++) {
-      const psbt = bitcoin.Psbt.fromHex(psbtHexs[i], { network: psbtNetwork })
-      const autoFinalized =
-        options && options[i] && options[i].autoFinalized == false ? false : true
-      const toSignInputs = await wallet.formatOptionsToSignInputs(psbtHexs[i], options[i])
-      await wallet.signPsbt(psbt, toSignInputs, autoFinalized)
-      result.push(psbt.toHex())
-    }
-    return result
+  signPsbt = async ({ approvalRes }: { approvalRes: SignPsbtResult }) => {
+    return approvalRes[0]!.psbtHex
   }
 
   @Reflect.metadata('APPROVAL', [
-    'MultiSignMessage',
-    req => {
+    'SignPsbt',
+    async req => {
+      const params: RequestMethodSignPsbtsParams = req.data.params
+      if (!params.psbtHexs) {
+        throw new Error('psbtHex is required')
+      }
+
+      params.toSignDatas = []
+      for (let i = 0; i < params.psbtHexs.length; i++) {
+        const psbtHex = formatPsbtHex(params.psbtHexs[i]!)
+        const toSignData = await wallet.getToSignData({
+          psbtHex,
+          options: params.options ? params.options[i] : undefined,
+        })
+        params.toSignDatas.push(toSignData)
+      }
+      delete params.psbtHexs
+      delete params.options
+    },
+  ])
+  multiSignPsbt = async ({ approvalRes }: { approvalRes: SignPsbtResult }) => {
+    return approvalRes.map(v => v.psbtHex)
+  }
+
+  @Reflect.metadata('APPROVAL', [
+    'SignMessage',
+    async req => {
       const params: RequestMethodSignMessagesParams = req.data.params
       if (params.messages.length == 0) {
         throw new Error('data is required')
@@ -394,25 +357,15 @@ class ProviderController extends BaseController {
           throw new Error('text is too long')
         }
       }
+
+      params.toSignMessages = params.messages.map(v => ({
+        text: v.text,
+        type: (v.type || SignMessageType.ECDSA) as any,
+      }))
     },
   ])
-  multiSignMessage = async ({
-    data: {
-      params: { messages },
-    },
-  }) => {
-    const account = await wallet.getCurrentAccount()
-    if (!account) throw null
-    const result: string[] = []
-    for (let i = 0; i < messages.length; i++) {
-      const message = messages[i]
-      if (message.type === 'bip322-simple') {
-        result.push(await wallet.signBIP322Simple(message.text))
-      } else {
-        result.push(await wallet.signMessage(message.text))
-      }
-    }
-    return result
+  multiSignMessage = async ({ approvalRes }: { approvalRes: SignMessageResult }) => {
+    return approvalRes.map(v => v.signature)
   }
 
   @Reflect.metadata('SAFE', true)
@@ -430,7 +383,7 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', [
     'InscribeTransfer',
-    req => {
+    async req => {
       const {
         data: {
           params: { ticker },
@@ -517,7 +470,7 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', [
     'CosmosSign',
-    req => {
+    async req => {
       const signDoc = req.data.params.signDoc
       req.data.params.signBytesHex = directSignDocToBytesHex(signDoc)
     },
@@ -542,7 +495,7 @@ class ProviderController extends BaseController {
 
   @Reflect.metadata('APPROVAL', [
     'CosmosSign',
-    req => {
+    async req => {
       const signerAddress = req.data.params.signerAddress
       const data = req.data.params.data
       req.data.params.signBytesHex = arbitrarySignDocToBytesHex(signerAddress, data)

@@ -65,3 +65,12 @@ export function psbtFromString(psbtStr: string) {
   }
   return bitcoin.Psbt.fromHex(psbtStr)
 }
+
+export function getEstimateFee(psbt: bitcoin.Psbt, userAddress: string, userPubkey: string) {
+  const signedPsbt = dummySignPsbt(
+    userAddress,
+    psbt.toBase64(),
+    psbt.data.inputs.map((_, index) => ({ index, publicKey: userPubkey }))
+  )
+  return signedPsbt.getFee()
+}

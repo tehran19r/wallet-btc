@@ -7,6 +7,7 @@ export * from './adapters'
 
 // Controllers
 export { phishingController, providerController, walletController } from './controllers'
+export { type ProviderMethodArgs, type ProviderMethods } from './controllers/provider/methodList'
 
 // Services
 export {
@@ -22,9 +23,6 @@ export {
 
 // webapi
 export { notification } from './webapi'
-
-// Shared types and constants
-export * from './shared/types'
 
 // Utils
 export { brc20Utils } from './utils/brc20-utils'

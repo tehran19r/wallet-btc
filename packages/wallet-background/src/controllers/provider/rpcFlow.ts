@@ -1,8 +1,8 @@
 import 'reflect-metadata'
 
+import { BUS_EVENTS, BUS_METHODS, ErrorCodes, WalletError } from '@unisat/wallet-shared'
 import { keyringService, notificationService, permissionService } from '../../services'
 import { PromiseFlow, underline2Camelcase } from '../../utils'
-import { BUS_METHODS, BUS_EVENTS, ErrorCodes, WalletError } from '@unisat/wallet-shared'
 
 import providerController from './controller'
 
@@ -112,7 +112,12 @@ const flowContext = flow
     const [approvalType, condition, options = {}] =
       Reflect.getMetadata('APPROVAL', providerController, mapMethod) || []
 
-    if (approvalType && (!condition || !condition(ctx.request))) {
+    let skipApproval = false
+    if (condition) {
+      skipApproval = await condition(ctx.request)
+    }
+
+    if (approvalType && skipApproval != true) {
       ctx.request.requestedApproval = true
       ctx.approvalRes = await notificationService.requestApproval(
         {

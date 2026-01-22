@@ -5,6 +5,11 @@
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "types": "lib/index.d.ts",
+  "files": [
+    "lib/**/*",
+    "src/**/*",
+    "README.md"
+  ],
   "exports": {
     ".": {
       "types": "./lib/index.d.ts",
@@ -12,16 +17,11 @@
       "import": "./lib/index.mjs"
     },
     "./types": {
-      "types": "./lib/types/index.d.ts",
-      "require": "./lib/types/index.js",
-      "import": "./lib/types/index.mjs"
+      "types": "./lib/types.d.ts",
+      "require": "./lib/types.js",
+      "import": "./lib/types.mjs"
     }
   },
-  "files": [
-    "lib/**/*",
-    "src/**/*",
-    "README.md"
-  ],
   "scripts": {
     "build": "tsup",
     "build:cjs": "tsup --format cjs",
