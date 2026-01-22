@@ -17,7 +17,7 @@ export function ApprovalProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     setTimeout(() => {
-      nav.navigate('/');
+      nav.navToRootHome();
     });
   };
 
@@ -27,9 +27,10 @@ export function ApprovalProvider({ children }: { children: React.ReactNode }) {
       await wallet.rejectApproval(reason, stay, isInternal);
     }
     if (!stay) {
-      nav.navigate('/');
+      nav.navToRootHome();
     }
   };
+
   const selfRef = useRef<ApprovalContextType>({
     getApproval,
     resolveApproval,

@@ -39,7 +39,11 @@ export function BRC20TokenDetail(props: {
                 preset="link"
                 size="xs"
                 onClick={() => {
-                  nav.navigate('OrdinalsInscriptionScreen', { inscription: deployInscription, withSend: true });
+                  nav.navigate('OrdinalsInscriptionScreen', {
+                    inscriptionId: deployInscription.inscriptionId,
+                    inscription: deployInscription,
+                    withSend: true
+                  });
                 }}
               />
             }

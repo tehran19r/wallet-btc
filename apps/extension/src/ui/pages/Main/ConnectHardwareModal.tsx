@@ -78,7 +78,7 @@ export const ConnectHardwareModal = ({ onClose }: { onClose: () => void }) => {
                 return;
               }
               if (isBooted) {
-                nav.navigate('CreateKeystoneWalletScreen');
+                nav.navigate('CreateKeystoneWalletScreen', {});
               } else {
                 nav.navigate('CreatePasswordScreen', { isKeystone: true });
               }

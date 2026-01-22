@@ -15,7 +15,7 @@ interface ExtraItem {
   ticker: string;
   value: BigNumber;
   symbol: string;
-  type: 'BRC20' | 'RUNES' | 'BTC';
+  type: 'brc-20' | 'Runes' | 'BTC';
   div: number;
 }
 
@@ -60,12 +60,12 @@ export function AmountItem({ item, inDetail }: { item: ExtraItem; inDetail?: boo
           size={inDetail ? 'xl' : 'xs'}
         />
       )}
-      {item.type === 'BRC20' && (
+      {item.type === 'brc-20' && (
         <>
           <Text text={item.value.abs().toString()} ellipsis style={{ maxWidth: 200 }} size={inDetail ? 'xl' : 'xs'} />
         </>
       )}
-      {item.type === 'RUNES' && (
+      {item.type === 'Runes' && (
         <>
           <Tooltip
             title={item.ticker}
@@ -238,7 +238,7 @@ export default function HistoryScreen() {
                       assetMap[b.ticker] = {
                         ticker: b.ticker,
                         value: new BigNumber(0),
-                        type: 'BRC20',
+                        type: 'brc-20',
                         symbol: '',
                         div: 0
                       };
@@ -253,7 +253,7 @@ export default function HistoryScreen() {
                       assetMap[r.spacedRune] = {
                         ticker: r.spacedRune,
                         value: new BigNumber(0),
-                        type: 'RUNES',
+                        type: 'Runes',
                         symbol: r.symbol,
                         div: r.divisibility
                       };
@@ -275,7 +275,7 @@ export default function HistoryScreen() {
                       assetMap[b.ticker] = {
                         ticker: b.ticker,
                         value: new BigNumber(0),
-                        type: 'BRC20',
+                        type: 'brc-20',
                         symbol: '',
                         div: 0
                       };
@@ -289,7 +289,7 @@ export default function HistoryScreen() {
                       assetMap[r.spacedRune] = {
                         ticker: r.spacedRune,
                         value: new BigNumber(0),
-                        type: 'RUNES',
+                        type: 'Runes',
                         symbol: r.symbol,
                         div: r.divisibility
                       };

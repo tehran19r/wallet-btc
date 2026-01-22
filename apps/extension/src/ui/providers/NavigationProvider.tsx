@@ -1,15 +1,16 @@
-import { NavigationContext, NavigationContextType, useChain } from '@unisat/wallet-state';
+import { NavigationContext, NavigationContextType, RouteTypes, useChain } from '@unisat/wallet-state';
 import { ChainType } from '@unisat/wallet-types';
 import { useCallback, useMemo, useRef } from 'react';
 import { useLocation, useNavigate as useNavigateOrigin } from 'react-router-dom';
-import { routes, RouteTypes } from '../pages/MainRoute';
+import { routes } from '../pages/MainRoute';
+import { openExtensionInTab } from '../web/tabs';
 
 export function useNavigate() {
   const navigate = useNavigateOrigin();
   const navigatingRef = useRef(false);
 
   return useCallback(
-    (routKey: RouteTypes | '#back', state?: any, pathState?: any) => {
+    (routKey: RouteTypes | '#back' | '/', state?: any, pathState?: any) => {
       if (navigatingRef.current) {
         return;
       }
@@ -60,8 +61,8 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   const chain = useChain();
   const value = useMemo<NavigationContextType>(
     () => ({
-      navigate: (screenName: RouteTypes, state?: any, pathState?: any) => {
-        navigate(screenName, state, pathState);
+      navigate: (screenName: RouteTypes, state?: any) => {
+        navigate(screenName, state);
       },
       poptotop() {
         //   navigation.dispatch(StackActions.popToTop())
@@ -69,7 +70,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
       goBack: () => {
         window.history.go(-1);
       },
-      replace: (screenName: RouteTypes, params?: any) => {
+      replace: () => {
         // todo
       },
       navToTab: () => {
@@ -107,10 +108,6 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
       },
 
       navToExplorerAddress: (address: string) => {
-        if (chain.isViewTxHistoryInternally) {
-          navigate('HistoryScreen');
-          return;
-        }
         let url = '';
         if (chain.enum === ChainType.BITCOIN_MAINNET) {
           url = `${chain.unisatExplorerUrl}/address/${address}`;
@@ -151,6 +148,16 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
           url = `${chain.unisatUrl}/inscribe?tick=${encodeURIComponent(ticker)}`;
         }
         window.open(url);
+      },
+      navToTest: () => {
+        // todo
+      },
+      navToRootHome: () => {
+        navigate('/');
+      },
+      openExtensionInTab: async () => {
+        await openExtensionInTab('index.html', {});
+        window.close();
       }
     }),
     [navigate, chain]

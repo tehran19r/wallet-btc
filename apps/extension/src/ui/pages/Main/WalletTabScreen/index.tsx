@@ -27,6 +27,7 @@ import {
   useCurrentKeyring,
   useI18n,
   useIsUnlocked,
+  useNavigation,
   useSkipVersionCallback,
   useSupportedAssets,
   useVersionInfo,
@@ -34,7 +35,6 @@ import {
   useWalletConfig
 } from '@unisat/wallet-state';
 
-import { getUiType } from '@/ui/web';
 import { useNavigate } from '../../MainRoute';
 import { SwitchChainModal } from '../../Settings/SwitchChainModal';
 import { AlkanesTab } from './AlkanesTab';
@@ -75,13 +75,14 @@ export default function WalletTabScreen() {
 
   const addressSummary = useAddressSummary();
 
+  const nav = useNavigation();
   const isUnlocked = useIsUnlocked();
-
-  const { isSidePanel } = getUiType();
 
   useEffect(() => {
     if (!isUnlocked) {
-      navigate('UnlockScreen');
+      nav.navToLock({
+        autoUnlockByFace: false
+      });
     }
   }, [isUnlocked]);
 
@@ -236,7 +237,7 @@ export default function WalletTabScreen() {
           <BalanceCard
             accountBalance={accountBalance}
             disableUtxoTools={walletConfig.disableUtxoTools}
-            enableRefresh={isSidePanel}
+            enableRefresh={true}
           />
 
           <WalletActions address={currentAccount?.address} chain={chain} />

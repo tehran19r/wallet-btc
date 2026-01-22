@@ -46,7 +46,9 @@ export default function BoostScreen() {
     }
 
     if (!isUnlocked) {
-      navigate('UnlockScreen');
+      navigate('UnlockScreen', {
+        autoUnlockByFace: true
+      });
       return;
     }
 

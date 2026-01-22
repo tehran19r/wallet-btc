@@ -4,7 +4,6 @@ import { Row, Text } from '@/ui/components';
 import { Button } from '@/ui/components/Button';
 import { Icon } from '@/ui/components/Icon';
 import { BuyBTCModal } from '@/ui/pages/BuyBTC/BuyBTCModal';
-import { useNavigate } from '@/ui/pages/MainRoute';
 import { TypeChain } from '@unisat/wallet-shared';
 import {
   useAddressExplorerUrl,
@@ -26,7 +25,6 @@ export const WalletActions = ({ chain, address }: WalletActionsProps) => {
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [utxoClicked, setUtxoClicked] = useState(false);
   const isFractal = chain.isFractal;
-  const navigate = useNavigate();
   const nav = useNavigation();
   const resetUiTxCreateScreen = useResetUiTxCreateScreen();
   const resetFeeRateBar = useResetFeeRateBar();
@@ -67,13 +65,13 @@ export const WalletActions = ({ chain, address }: WalletActionsProps) => {
   };
 
   const onReceiveClick = () => {
-    navigate('ReceiveScreen');
+    nav.navigate('ReceiveScreen');
   };
 
   const onSendClick = () => {
     resetUiTxCreateScreen();
     resetFeeRateBar();
-    navigate('TxCreateScreen');
+    nav.navigate('TxCreateScreen');
   };
 
   const NewBadge = ({ top = -16, right = -14 }: { top?: number; right?: number }) => (
@@ -100,7 +98,7 @@ export const WalletActions = ({ chain, address }: WalletActionsProps) => {
             preset="home"
             icon="receive"
             onClick={(e) => {
-              navigate('ReceiveScreen');
+              nav.navigate('ReceiveScreen');
             }}
           />
 
@@ -110,7 +108,7 @@ export const WalletActions = ({ chain, address }: WalletActionsProps) => {
             icon="send"
             onClick={(e) => {
               resetUiTxCreateScreen();
-              navigate('TxCreateScreen');
+              nav.navigate('TxCreateScreen');
             }}
           />
           <Button
@@ -119,7 +117,7 @@ export const WalletActions = ({ chain, address }: WalletActionsProps) => {
             icon="history"
             onClick={(e) => {
               if (chain.isViewTxHistoryInternally) {
-                navigate('HistoryScreen');
+                nav.navigate('HistoryScreen');
               } else {
                 window.open(addressExplorerUrl);
               }

@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
-import { TokenBalance, TokenTransfer } from '@/shared/types';
 import { Button, Checkbox, Column, Content, Header, Icon, Input, Layout, Row, Text } from '@/ui/components';
 import BRC20Preview from '@/ui/components/BRC20Preview';
 import { BRC20Ticker } from '@/ui/components/BRC20Ticker';
@@ -14,22 +13,18 @@ import { showLongNumber } from '@/ui/utils';
 import {
   BRC20SendStepParams,
   BRC20SendTabKey,
-  ContextData,
-  UpdateContextDataParams,
   useBRC20SendScreenLogic,
   useBRC20SendScreenLogicStep1,
   useBRC20SendScreenLogicStep2,
   useBRC20SendScreenLogicStep3,
-  useCurrentAccount,
   useI18n,
   useNavigation,
-  useTools,
-  useWallet
+  useTransferableListLogic
 } from '@unisat/wallet-state';
 
 import { getUiType } from '@/ui/web';
+import { TokenBalance } from '@unisat/wallet-shared';
 import { SignPsbt } from '../Approval/components';
-import { useNavigate } from '../MainRoute';
 
 function Step1({ contextData, updateContextData }: BRC20SendStepParams) {
   const { t, disabled, tokenBalance, onClickNext } = useBRC20SendScreenLogicStep1({ contextData, updateContextData });
@@ -57,7 +52,7 @@ function Step1({ contextData, updateContextData }: BRC20SendStepParams) {
 
 const InscribeTransferButton = ({ tokenBalance }: { tokenBalance: TokenBalance }) => {
   const { t } = useI18n();
-  const navigate = useNavigate();
+  const nav = useNavigation();
   const isSafeBalanceZero = tokenBalance.availableBalanceSafe != '0';
 
   return (
@@ -65,7 +60,7 @@ const InscribeTransferButton = ({ tokenBalance }: { tokenBalance: TokenBalance }
       <Button
         preset="default"
         onClick={() => {
-          navigate('InscribeTransferScreen', { ticker: tokenBalance.ticker });
+          nav.navigate('InscribeTransferScreen', { ticker: tokenBalance.ticker });
         }}
         style={{
           width: '100%',
@@ -101,47 +96,21 @@ const InscribeTransferButton = ({ tokenBalance }: { tokenBalance: TokenBalance }
   );
 };
 
-function TransferableList({
-  contextData,
-  updateContextData
-}: {
-  contextData: ContextData;
-  updateContextData: (params: UpdateContextDataParams) => void;
-}) {
-  const wallet = useWallet();
-  const currentAccount = useCurrentAccount();
-  const { t } = useI18n();
+function TransferableList({ contextData, updateContextData }: BRC20SendStepParams) {
+  const {
+    // data
+    items,
+    selectedCount,
+    allSelected,
 
-  const [items, setItems] = useState<TokenTransfer[]>([]);
-  const [total, setTotal] = useState(0);
-  const [pagination, setPagination] = useState({ currentPage: 1, pageSize: 100 });
-  const [allSelected, setAllSelected] = useState(false);
+    // actions
+    onClickItem,
+    onCheckBoxChange,
+    onClickRefresh,
 
-  const tools = useTools();
-  const fetchData = async () => {
-    try {
-      // tools.showLoading(true);
-      const { list, total } = await wallet.getBRC20TransferableList(
-        currentAccount.address,
-        contextData.tokenBalance.ticker,
-        pagination.currentPage,
-        pagination.pageSize
-      );
-      setItems(list);
-      setTotal(total);
-    } catch (e) {
-      tools.toastError((e as Error).message);
-    } finally {
-      // tools.showLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [pagination]);
-  const totalAmount = items.reduce((pre, cur) => new BigNumber(cur.amount).plus(pre), new BigNumber(0)).toString();
-
-  const selectedCount = useMemo(() => contextData.inscriptionIdSet.size, [contextData]);
+    // tools
+    t
+  } = useTransferableListLogic({ contextData, updateContextData });
 
   return (
     <Column>
@@ -190,88 +159,26 @@ function TransferableList({
                 timestamp={v.timestamp}
                 selected={contextData.inscriptionIdSet.has(v.inscriptionId)}
                 type="TRANSFER"
-                onClick={() => {
-                  if (contextData.inscriptionIdSet.has(v.inscriptionId)) {
-                    const inscriptionIdSet = new Set(contextData.inscriptionIdSet);
-                    inscriptionIdSet.delete(v.inscriptionId);
-                    const transferAmount = new BigNumber(contextData.transferAmount).minus(new BigNumber(v.amount));
-                    updateContextData({
-                      inscriptionIdSet,
-                      transferAmount: transferAmount.toString()
-                    });
-                    if (allSelected) {
-                      setAllSelected(false);
-                    }
-                  } else {
-                    const inscriptionIdSet = new Set(contextData.inscriptionIdSet);
-                    inscriptionIdSet.add(v.inscriptionId);
-                    const transferAmount = new BigNumber(contextData.transferAmount)
-                      .plus(new BigNumber(v.amount))
-                      .toString();
-                    updateContextData({
-                      inscriptionIdSet,
-                      transferAmount
-                    });
-                    if (allSelected == false && transferAmount === totalAmount) {
-                      setAllSelected(true);
-                    }
-                  }
-                }}
+                onClick={() => onClickItem(v)}
               />
             ))}
           </Row>
 
           <Row justifyEnd>
             <Row mx="md">
-              <RefreshButton
-                onClick={() => {
-                  fetchData();
-                }}
-              />
+              <RefreshButton onClick={onClickRefresh} />
             </Row>
 
-            <Checkbox
-              onChange={(e) => {
-                const val = e.target.checked;
-                setAllSelected(val);
-                if (val) {
-                  const inscriptionIdSet = new Set(items.map((v) => v.inscriptionId));
-                  updateContextData({
-                    inscriptionIdSet,
-                    transferAmount: totalAmount
-                  });
-                } else {
-                  updateContextData({
-                    inscriptionIdSet: new Set(),
-                    transferAmount: '0'
-                  });
-                }
-              }}
-              checked={allSelected}
-              style={{ fontSize: fontSizes.sm }}>
+            <Checkbox onChange={onCheckBoxChange} checked={allSelected} style={{ fontSize: fontSizes.sm }}>
               <Text text={t('select_all')} preset="sub" color="white" />
             </Checkbox>
           </Row>
-
-          {/* <Row justifyCenter mt="lg">
-        <Pagination
-          pagination={pagination}
-          total={total}
-          onChange={(pagination) => {
-            setPagination(pagination);
-          }}
-        />
-      </Row> */}
         </Column>
       ) : (
         <Column>
           <Row justifyBetween>
             <Text text={t('transfer_inscriptions_0')} color="textDim" />
-            <RefreshButton
-              onClick={() => {
-                fetchData();
-              }}
-            />
+            <RefreshButton onClick={onClickRefresh} />
           </Row>
         </Column>
       )}

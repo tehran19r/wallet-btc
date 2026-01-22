@@ -5,6 +5,7 @@ import { AddressAssets } from '@unisat/wallet-shared';
 import { useBTCUnit, useChain, useI18n } from '@unisat/wallet-state';
 
 import { IMAGE_SOURCE_MAP } from '@/shared/constant';
+import { colors } from '@/ui/theme/colors';
 import { numUtils } from '@unisat/base-utils';
 import { Card } from '../Card';
 import { Column } from '../Column';
@@ -73,7 +74,7 @@ export function AddressTypeCard2(props: AddressTypeCardProp2) {
   const btcUnit = useBTCUnit();
   const { onClick, label, items, checked } = props;
   return (
-    <Card px="zero" py="zero" gap="zero" rounded onClick={onClick}>
+    <Card px="zero" py="zero" gap={'zero'} rounded onClick={onClick}>
       <Column full>
         <Row justifyBetween px="md" pt="md">
           <Column justifyCenter>
@@ -83,20 +84,30 @@ export function AddressTypeCard2(props: AddressTypeCardProp2) {
         </Row>
 
         {items.map((v) => (
-          <Row px="md" pb="sm" key={v.address} itemsCenter>
-            <Row style={{ width: '120px' }}>
+          <Column
+            px="md"
+            pb="sm"
+            key={v.address}
+            itemsCenter
+            style={{
+              borderBottomWidth: items.length > 1 ? 1 : 0,
+              borderBottomColor: colors.line2
+            }}>
+            <Row fullX>
               <CopyableAddress address={v.address} />
             </Row>
-
-            <Text text={`(${v.path})`} size="xs" color="textDim" disableTranslate />
-
-            {v.satoshis > 0 && (
-              <Row justifyCenter gap="zero" itemsCenter>
-                <Icon icon="btc" size={fontSizes.iconMiddle} />
-                <Text text={`${numUtils.satoshisToAmount(v.satoshis)} ${btcUnit}`} color="yellow" size="xxxs" />
-              </Row>
-            )}
-          </Row>
+            <Row justifyBetween fullX>
+              <Text text={`(${v.path})`} size="xs" color="textDim" disableTranslate />
+              {v.satoshis > 0 ? (
+                <Row justifyCenter gap="zero" itemsCenter>
+                  <Icon icon="btc" size={fontSizes.iconMiddle} />
+                  <Text text={`${numUtils.satoshisToAmount(v.satoshis)} ${btcUnit}`} color="yellow" size="xs" />
+                </Row>
+              ) : (
+                <Row />
+              )}
+            </Row>
+          </Column>
         ))}
       </Column>
     </Card>
