@@ -48,7 +48,11 @@ export function isAddressLikelyValid(address: string): boolean {
   // ---- Witness v1 (bc1p / tb1p): P2TR (Taproot) ----
   if (lower.startsWith('bc1p') || lower.startsWith('tb1p')) {
     // P2TR uses bech32m, always 62 chars
-    if (lower.length !== 62) return false
+    if (lower.length == 62) {
+      // valid lengths
+    } else {
+      return false
+    }
     return BECH32_REGEX.test(lower.slice(4))
   }
 
