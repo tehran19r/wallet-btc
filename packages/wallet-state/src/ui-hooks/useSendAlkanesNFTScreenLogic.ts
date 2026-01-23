@@ -71,7 +71,7 @@ export function useSendAlkanesNFTScreenLogic() {
   const onCreateTxHandleConfirm = async () => {
     tools.showLoading(true)
     try {
-      const toSignData = await prepareSendAlkanes(toInfo, alkanesInfo.alkaneid, '1', feeRate)
+      const toSignData = await prepareSendAlkanes(toInfo, alkanesInfo.alkaneid, '1', feeRate, 'nft')
       if (toSignData) {
         transferData.current.toSignData = toSignData
         setStep(1)

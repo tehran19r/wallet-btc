@@ -121,7 +121,8 @@ export function useSendAlkanesScreenLogic() {
         toInfo,
         tokenBalance.alkaneid,
         bnUtils.fromDecimalAmount(inputAmount, tokenBalance.divisibility),
-        feeRate
+        feeRate,
+        'ft'
       )
       if (toSignData) {
         transferData.current.toSignData = toSignData

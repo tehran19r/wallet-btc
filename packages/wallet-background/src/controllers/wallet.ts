@@ -3060,11 +3060,13 @@ export class WalletController extends BaseController {
     alkaneid,
     amount,
     feeRate,
+    type,
   }: {
     to: string
     alkaneid: string
     amount: string
     feeRate: number
+    type: 'ft' | 'nft'
   }): Promise<ToSignData> => {
     amount = paramsUtils.formatAmount(amount)
 
@@ -3100,6 +3102,7 @@ export class WalletController extends BaseController {
             value: {
               alkaneid,
               amount,
+              type,
             },
             type: PsbtActionDetailType.ALKANES,
           },

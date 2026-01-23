@@ -628,6 +628,7 @@ export interface WalletController {
     alkaneid: string
     amount: string
     feeRate: number
+    type: 'ft' | 'nft'
   }): Promise<ToSignData>
 
   getAlkanesCollectionList(

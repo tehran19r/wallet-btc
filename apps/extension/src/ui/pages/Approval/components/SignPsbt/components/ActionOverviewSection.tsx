@@ -88,11 +88,15 @@ function DetailItemRow({ detail, decodedPsbt }: { detail: PsbtActionDetail; deco
       const foundAlkanes = decodedPsbt.inputInfos.find((v) =>
         v.alkanes.find((rune) => rune.alkaneid === detail.value.alkaneid)
       )!.alkanes[0];
+      let text = `${bnUtils.toDecimalAmount(detail.value.amount, foundAlkanes.divisibility)} ${foundAlkanes.name} `;
+      if (detail.value.type === 'nft') {
+        text = `${foundAlkanes.name}`;
+      }
       return (
         <Row justifyBetween>
           {LabelCom}
           <Text
-            text={`${bnUtils.toDecimalAmount(detail.value.amount, foundAlkanes.divisibility)} ${foundAlkanes.name} `}
+            text={text}
             preset={detail.highlight ? 'bold' : 'regular'}
             color={detail.warning ? 'warning' : detail.highlight ? 'gold' : 'white'}
             size="sm"

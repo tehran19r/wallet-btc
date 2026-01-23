@@ -432,12 +432,19 @@ export function usePrepareSendAlkanesCallback() {
   const wallet = useWallet()
   const account = useCurrentAccount()
   const callback = useCallback(
-    async (toAddressInfo: ToAddressInfo, alkaneid: string, amount: string, feeRate: number) => {
+    async (
+      toAddressInfo: ToAddressInfo,
+      alkaneid: string,
+      amount: string,
+      feeRate: number,
+      type: 'ft' | 'nft'
+    ) => {
       return await wallet.createSendAlkanesPsbt({
         to: toAddressInfo.address,
         alkaneid,
         amount,
         feeRate,
+        type,
       })
     },
     [wallet, account]
