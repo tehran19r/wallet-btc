@@ -24,7 +24,11 @@ export function isValidAddress(address: string, networkType?: NetworkType) {
 export function getAddressUtxoDust(address: string) {
   const addressType = getAddressType(address);
   if (addressType === AddressType.P2WPKH) {
-    return 294;
+    if (address.length === 42) {
+      return 294;
+    } else {
+      return 330;
+    }
   } else if (addressType === AddressType.P2TR) {
     return 330;
   } else {
