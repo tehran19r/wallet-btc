@@ -1,10 +1,10 @@
+import { ToSignInput } from '@unisat/keyring-service/types'
+import { bitcoin, UTXO_DUST } from '@unisat/wallet-bitcoin'
+import { ErrorCodes, WalletError } from '@unisat/wallet-shared'
 import { NetworkType } from '@unisat/wallet-types'
-import { Transaction } from './transaction/transaction'
+import { createTx } from './transaction/transaction'
 import { utxoHelper } from './transaction/utxo'
 import { UnspentOutput } from './types'
-import { bitcoin, UTXO_DUST } from '@unisat/wallet-bitcoin'
-import { ToSignInput } from '@unisat/keyring-service/types'
-import { ErrorCodes, WalletError } from '@unisat/wallet-shared'
 export async function sendBTC({
   btcUtxos,
   tos,
@@ -32,11 +32,7 @@ export async function sendBTC({
     throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
-  const tx = new Transaction()
-  tx.setNetworkType(networkType)
-  tx.setFeeRate(feeRate)
-  tx.setEnableRBF(true)
-  tx.setChangeAddress(changeAddress)
+  const tx = createTx({ networkType, feeRate, changeAddress, enableRBF: true })
 
   tos.forEach(v => {
     tx.addOutput(v.address, v.satoshis)
@@ -78,10 +74,7 @@ export async function sendAllBTC({
     throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
-  const tx = new Transaction()
-  tx.setNetworkType(networkType)
-  tx.setFeeRate(feeRate)
-  tx.setEnableRBF(true)
+  const tx = createTx({ networkType, feeRate, enableRBF: true })
   tx.addOutput(toAddress, UTXO_DUST)
 
   const toSignInputs: ToSignInput[] = []

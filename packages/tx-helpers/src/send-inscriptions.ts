@@ -1,5 +1,5 @@
 import { NetworkType } from '@unisat/wallet-types'
-import { Transaction } from './transaction/transaction'
+import { createTx } from './transaction/transaction'
 import { utxoHelper } from './transaction/utxo'
 import { UnspentOutput } from './types'
 import { bitcoin } from '@unisat/wallet-bitcoin'
@@ -28,17 +28,14 @@ export async function sendInscriptions({
     throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
-  const tx = new Transaction()
-  tx.setNetworkType(networkType)
-  tx.setFeeRate(feeRate)
-  tx.setChangeAddress(changeAddress)
+  const tx = createTx({ networkType, feeRate, changeAddress })
 
   const toSignInputs: ToSignInput[] = []
 
   for (let i = 0; i < assetUtxos.length; i++) {
     const assetUtxo = assetUtxos[i]!
     if (assetUtxo.inscriptions.length > 1) {
-      throw new Error('Multiple inscriptions in one UTXO! Please split them first.')
+      throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
     }
     tx.addInput(assetUtxo)
     tx.addOutput(toAddress, assetUtxo.satoshis)

@@ -113,6 +113,27 @@ export function utxoToInput(utxo: UnspentOutput, estimate?: boolean) {
 /**
  * Transaction
  */
+export interface TxConfig {
+  networkType: NetworkType
+  feeRate: number
+  changeAddress?: string
+  enableRBF?: boolean
+}
+
+/**
+ * Create a Transaction instance with common configuration
+ */
+export function createTx(config: TxConfig): Transaction {
+  const tx = new Transaction()
+  tx.setNetworkType(config.networkType)
+  tx.setFeeRate(config.feeRate)
+  tx.setEnableRBF(config.enableRBF !== false)
+  if (config.changeAddress) {
+    tx.setChangeAddress(config.changeAddress)
+  }
+  return tx
+}
+
 export class Transaction {
   private utxos: UnspentOutput[] = []
   private inputs: TxInput[] = []

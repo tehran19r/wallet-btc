@@ -1,5 +1,5 @@
 import { NetworkType } from '@unisat/wallet-types'
-import { Transaction } from './transaction/transaction'
+import { createTx } from './transaction/transaction'
 import { utxoHelper } from './transaction/utxo'
 import { UnspentOutput } from './types'
 import { bitcoin } from '@unisat/wallet-bitcoin'
@@ -43,11 +43,7 @@ export async function sendInscription({
     throw new WalletError(ErrorCodes.ASSET_MAYBE_LOST)
   }
 
-  const tx = new Transaction()
-  tx.setNetworkType(networkType)
-  tx.setFeeRate(feeRate)
-  tx.setEnableRBF(true)
-  tx.setChangeAddress(changeAddress)
+  const tx = createTx({ networkType, feeRate, changeAddress, enableRBF: true })
 
   tx.addInput(assetUtxo)
   tx.addOutput(toAddress, outputValue)

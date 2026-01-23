@@ -2,7 +2,7 @@ import bigInt from 'big-integer'
 
 import { varint } from './runes'
 import { RuneId } from './runes/rund_id'
-import { Transaction } from './transaction/transaction'
+import { createTx } from './transaction/transaction'
 import { utxoHelper } from './transaction/utxo'
 import { UnspentOutput } from './types'
 import { bitcoin } from '@unisat/wallet-bitcoin'
@@ -43,11 +43,7 @@ export async function sendRunes({
     throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
-  const tx = new Transaction()
-  tx.setNetworkType(networkType)
-  tx.setFeeRate(feeRate)
-  tx.setEnableRBF(true)
-  tx.setChangeAddress(btcAddress)
+  const tx = createTx({ networkType, feeRate, changeAddress: btcAddress, enableRBF: true })
 
   const toSignInputs: ToSignInput[] = []
 

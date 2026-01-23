@@ -1,19 +1,14 @@
 import { decodeAddress } from '@unisat/wallet-bitcoin'
 import { AddressType, NetworkType } from '@unisat/wallet-types'
 import { UnspentOutput } from 'src/types'
+import { ErrorCodes, WalletError } from '@unisat/wallet-shared'
 
 function hasInscription(utxos: UnspentOutput[]) {
-  if (utxos.find(v => v.inscriptions.length > 0)) {
-    return true
-  }
-  return false
+  return utxos.some(v => v.inscriptions.length > 0)
 }
 
 function hasAnyAssets(utxos: UnspentOutput[]) {
-  if (utxos.find(v => v.inscriptions.length > 0)) {
-    return true
-  }
-  return false
+  return utxos.some(v => v.inscriptions.length > 0 || (v.runes && v.runes.length > 0))
 }
 
 /**
@@ -55,7 +50,7 @@ function getAddedVirtualSize(addressType: AddressType) {
   } else if (addressType === AddressType.P2SH_P2WPKH) {
     return 41 + 24 + (1 + 1 + 72 + 1 + 33) / 4
   }
-  throw new Error('unknown address type')
+  throw new WalletError(ErrorCodes.UNKNOWN)
 }
 
 export function getUtxoDust(addressType: AddressType) {

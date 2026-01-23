@@ -1,6 +1,14 @@
 import { AddressType } from '@unisat/wallet-types'
 import { expect } from 'vitest'
-import { sendAllBTC, sendBTC, sendInscription, UnspentOutput } from '../src'
+import {
+  sendAllBTC,
+  sendBTC,
+  sendInscription,
+  sendInscriptions,
+  sendRunes,
+  splitInscriptionUtxo,
+  UnspentOutput,
+} from '../src'
 import { LocalWallet } from '../src/wallet/local-wallet'
 import { printPsbt } from './dump'
 
@@ -232,6 +240,206 @@ export async function dummySendInscription({
     networkType: btcWallet.networkType,
     changeAddress: btcWallet.address,
     enableMixed,
+  })
+  const btcToSignInputs = toSignInputs.filter(v => v.publicKey === btcWallet.pubkey)
+  if (btcToSignInputs.length > 0) {
+    await btcWallet.signPsbt(psbt, {
+      autoFinalized: false,
+      toSignInputs: btcToSignInputs,
+    })
+  }
+
+  const assetToSignInputs = toSignInputs.filter(v => v.publicKey === assetWallet.pubkey)
+
+  if (assetToSignInputs.length > 0) {
+    await assetWallet.signPsbt(psbt, {
+      autoFinalized: false,
+      toSignInputs: assetToSignInputs,
+    })
+  }
+
+  psbt.finalizeAllInputs()
+
+  const tx = psbt.extractTransaction(true)
+  const txid = tx.getId()
+  const inputCount = psbt.txInputs.length
+  const outputCount = psbt.txOutputs.length
+  const fee = psbt.getFee()
+  const virtualSize = tx.virtualSize()
+  const finalFeeRate = parseFloat((fee / virtualSize).toFixed(1))
+  if (dump) {
+    printPsbt(psbt)
+  }
+  return { psbt, txid, inputCount, outputCount, feeRate: finalFeeRate }
+}
+
+/**
+ * create a dummy send inscriptions psbt for test
+ */
+export async function dummySendInscriptions({
+  assetWallet,
+  assetUtxos,
+  btcWallet,
+  btcUtxos,
+  feeRate,
+  toAddress,
+  dump,
+  enableRBF,
+}: {
+  assetWallet: LocalWallet
+  assetUtxos: UnspentOutput[]
+  btcWallet: LocalWallet
+  btcUtxos: UnspentOutput[]
+  feeRate: number
+  toAddress: string
+  dump?: boolean
+  enableRBF?: boolean
+}) {
+  const { psbt, toSignInputs } = await sendInscriptions({
+    btcUtxos,
+    assetUtxos,
+    toAddress,
+    feeRate,
+    networkType: btcWallet.networkType,
+    changeAddress: btcWallet.address,
+  })
+
+  const btcToSignInputs = toSignInputs.filter(v => v.publicKey === btcWallet.pubkey)
+  if (btcToSignInputs.length > 0) {
+    await btcWallet.signPsbt(psbt, {
+      autoFinalized: false,
+      toSignInputs: btcToSignInputs,
+    })
+  }
+
+  const assetToSignInputs = toSignInputs.filter(v => v.publicKey === assetWallet.pubkey)
+  if (assetToSignInputs.length > 0) {
+    await assetWallet.signPsbt(psbt, {
+      autoFinalized: false,
+      toSignInputs: assetToSignInputs,
+    })
+  }
+
+  psbt.finalizeAllInputs()
+
+  const tx = psbt.extractTransaction(true)
+  const txid = tx.getId()
+  const inputCount = psbt.txInputs.length
+  const outputCount = psbt.txOutputs.length
+  const fee = psbt.getFee()
+  const virtualSize = tx.virtualSize()
+  const finalFeeRate = parseFloat((fee / virtualSize).toFixed(1))
+  if (dump) {
+    printPsbt(psbt)
+  }
+  return { psbt, txid, inputCount, outputCount, feeRate: finalFeeRate }
+}
+
+/**
+ * create a dummy split inscription psbt for test
+ */
+export async function dummySplitOrdUtxo({
+  assetWallet,
+  assetUtxo,
+  btcWallet,
+  btcUtxos,
+  feeRate,
+  outputValue,
+  dump,
+  enableRBF,
+}: {
+  assetWallet: LocalWallet
+  assetUtxo: UnspentOutput
+  btcWallet: LocalWallet
+  btcUtxos: UnspentOutput[]
+  outputValue?: number
+  feeRate: number
+  dump?: boolean
+  enableRBF?: boolean
+}) {
+  const { psbt, toSignInputs, splitedCount } = await splitInscriptionUtxo({
+    assetUtxo,
+    btcUtxos,
+    feeRate,
+    networkType: btcWallet.networkType,
+    changeAddress: btcWallet.address,
+    outputValue,
+  })
+
+  const btcToSignInputs = toSignInputs.filter(v => v.publicKey === btcWallet.pubkey)
+  if (btcToSignInputs.length > 0) {
+    await btcWallet.signPsbt(psbt, {
+      autoFinalized: false,
+      toSignInputs: btcToSignInputs,
+    })
+  }
+
+  const assetToSignInputs = toSignInputs.filter(v => v.publicKey === assetWallet.pubkey)
+  if (assetToSignInputs.length > 0) {
+    await assetWallet.signPsbt(psbt, {
+      autoFinalized: false,
+      toSignInputs: assetToSignInputs,
+    })
+  }
+
+  psbt.finalizeAllInputs()
+
+  const tx = psbt.extractTransaction(true)
+  const txid = tx.getId()
+  const inputCount = psbt.txInputs.length
+  const outputCount = psbt.txOutputs.length
+  const fee = psbt.getFee()
+  const virtualSize = tx.virtualSize()
+  const finalFeeRate = parseFloat((fee / virtualSize).toFixed(1))
+  if (dump) {
+    printPsbt(psbt)
+  }
+  return {
+    psbt,
+    txid,
+    inputCount,
+    outputCount,
+    feeRate: finalFeeRate,
+    splitedCount,
+  }
+}
+
+export async function dummySendRunes({
+  assetWallet,
+  assetUtxo,
+  btcWallet,
+  btcUtxos,
+  feeRate,
+  toAddress,
+  dump,
+  enableRBF,
+  runeid,
+  runeAmount,
+  outputValue,
+}: {
+  assetWallet: LocalWallet
+  assetUtxo: UnspentOutput
+  btcWallet: LocalWallet
+  btcUtxos: UnspentOutput[]
+  feeRate: number
+  toAddress: string
+  dump?: boolean
+  enableRBF?: boolean
+  runeid: string
+  runeAmount: string
+  outputValue: number
+}) {
+  const { psbt, toSignInputs } = await sendRunes({
+    assetUtxos: [assetUtxo],
+    btcUtxos,
+    toAddress,
+    networkType: btcWallet.networkType,
+    btcAddress: btcWallet.address,
+    assetAddress: assetWallet.address,
+    feeRate,
+    runeid,
+    runeAmount,
+    outputValue,
   })
   const btcToSignInputs = toSignInputs.filter(v => v.publicKey === btcWallet.pubkey)
   if (btcToSignInputs.length > 0) {

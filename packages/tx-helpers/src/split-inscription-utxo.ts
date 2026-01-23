@@ -1,7 +1,7 @@
 import { NetworkType } from '@unisat/wallet-types'
 import { ToSignInput } from '@unisat/keyring-service/types'
 
-import { InscriptionUnit, InscriptionUnspendOutput, Transaction, utxoHelper } from './transaction'
+import { InscriptionUnit, InscriptionUnspendOutput, createTx, utxoHelper } from './transaction'
 import { UnspentOutput } from './types'
 import { bitcoin } from '@unisat/wallet-bitcoin'
 import { ErrorCodes, WalletError } from '@unisat/wallet-shared'
@@ -29,11 +29,7 @@ export async function splitInscriptionUtxo({
     throw new WalletError(ErrorCodes.NOT_SAFE_UTXOS)
   }
 
-  const tx = new Transaction()
-  tx.setNetworkType(networkType)
-  tx.setFeeRate(feeRate)
-  tx.setEnableRBF(true) // As the bitcoin node has enable full-rbf policy, this option is not available anymore.
-  tx.setChangeAddress(changeAddress)
+  const tx = createTx({ networkType, feeRate, changeAddress, enableRBF: true })
 
   const toSignInputs: ToSignInput[] = []
 
