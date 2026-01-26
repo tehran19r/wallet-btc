@@ -9,7 +9,7 @@ patchedDependencies:
     hash: sfliv4ywpl5kzlobbvjiwho3su
     path: patches/@dreson4__react-native-quick-bip39@0.0.6.patch
   bitcoinjs-lib@6.1.6:
-    hash: haltia7t3wsfvgydctp3gdqqqi
+    hash: endiwip2ry2tlbgod6aak5qlwa
     path: patches/bitcoinjs-lib@6.1.6.patch
   bitcore-lib@10.0.0:
     hash: u3dvb4yhlnk5fun7e4tf7v32ye
@@ -46,7 +46,7 @@ importers:
         version: 6.7.0(eslint@8.50.0)(typescript@5.2.2)
       bitcoinjs-lib:
         specifier: ^6.1.6
-        version: 6.1.6(patch_hash=haltia7t3wsfvgydctp3gdqqqi)
+        version: 6.1.6(patch_hash=endiwip2ry2tlbgod6aak5qlwa)
       eslint:
         specifier: ^8.0.0
         version: 8.50.0
@@ -75,7 +75,7 @@ importers:
         specifier: ^0.34.0
         version: 0.34.0(@vitest/ui@0.34.0)
 
-  apps/unisat-extension:
+  apps/extension:
     dependencies:
       '@ant-design/icons':
         specifier: ^4.7.0
@@ -349,7 +349,7 @@ importers:
         version: 4.17.21
       loglevel:
         specifier: ^1.8.0
-        version: 1.8.1
+        version: 1.9.2
       lz-string:
         specifier: ^1.5.0
         version: 1.5.0
@@ -1455,7 +1455,7 @@ importers:
         version: 3.1.0
       bitcoinjs-lib:
         specifier: ^6.1.5
-        version: 6.1.6(patch_hash=haltia7t3wsfvgydctp3gdqqqi)
+        version: 6.1.6(patch_hash=endiwip2ry2tlbgod6aak5qlwa)
       bitcore-lib:
         specifier: ^10.0.0
         version: 10.0.0(patch_hash=u3dvb4yhlnk5fun7e4tf7v32ye)
@@ -1799,7 +1799,7 @@ importers:
         version: link:../wallet-types
       bitcoinjs-lib:
         specifier: ^6.1.5
-        version: 6.1.6(patch_hash=haltia7t3wsfvgydctp3gdqqqi)
+        version: 6.1.6(patch_hash=endiwip2ry2tlbgod6aak5qlwa)
       ecpair:
         specifier: ^2.1.0
         version: 2.1.0
@@ -12000,7 +12000,7 @@ packages:
       '@noble/hashes': 1.8.0
     dev: false
 
-  /bitcoinjs-lib@6.1.6(patch_hash=haltia7t3wsfvgydctp3gdqqqi):
+  /bitcoinjs-lib@6.1.6(patch_hash=endiwip2ry2tlbgod6aak5qlwa):
     resolution: {integrity: sha512-Fk8+Vc+e2rMoDU5gXkW9tD+313rhkm5h6N9HfZxXvYU9LedttVvmXKTgd9k5rsQJjkSfsv6XRM8uhJv94SrvcA==}
     engines: {node: '>=8.0.0'}
     dependencies:
@@ -29241,6 +29241,7 @@ packages:
 
   /whatwg-encoding@1.0.5:
     resolution: {integrity: sha512-b5lim54JOPN9HtzvK9HFXvBma/rnfFeqsic0hSpjtDbVxR3dJKLc+KB4V6GgiGOvl7CY/KNh8rxSo9DKQrnUEw==}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
     dependencies:
       iconv-lite: 0.4.24
     dev: false

@@ -1,5 +1,5 @@
 diff --git a/src/psbt.js b/src/psbt.js
-index b071f374f9d9b2a0bb6f4385550ace3166ea16f8..14b235a35f0722a203f05a8462c2290c0f54014e 100644
+index b071f374f9d9b2a0bb6f4385550ace3166ea16f8..a08a3c3ffebb448736c194713643221bd6f3e1ee 100644
 --- a/src/psbt.js
 +++ b/src/psbt.js
 @@ -444,7 +444,7 @@ class Psbt {
@@ -11,7 +11,21 @@ index b071f374f9d9b2a0bb6f4385550ace3166ea16f8..14b235a35f0722a203f05a8462c2290c
        results.push(validator(pSig.pubkey, hash, sig.signature));
      }
      return results.every(res => res === true);
-@@ -1194,7 +1194,7 @@ function getHashAndSighashType(
+@@ -988,9 +988,10 @@ function canFinalize(input, script, scriptType) {
+   }
+ }
+ function checkCache(cache) {
+-  if (cache.__UNSAFE_SIGN_NONSEGWIT !== false) {
+-    throw new Error('Not BIP174 compliant, can not export');
+-  }
++  // disable check cache
++  // if (cache.__UNSAFE_SIGN_NONSEGWIT !== false) {
++  //   throw new Error('Not BIP174 compliant, can not export');
++  // }
+ }
+ function hasSigs(neededSigs, partialSig, pubkeys) {
+   if (!partialSig) return false;
+@@ -1194,7 +1195,7 @@ function getHashAndSighashType(
      false,
      sighashTypes,
    );
@@ -20,7 +34,52 @@ index b071f374f9d9b2a0bb6f4385550ace3166ea16f8..14b235a35f0722a203f05a8462c2290c
    return {
      hash,
      sighashType,
-@@ -1342,7 +1342,7 @@ function getTaprootHashesForSig(
+@@ -1254,25 +1255,26 @@ function getHashForSig(inputIndex, input, cache, forValidate, sighashTypes) {
+       sighashType,
+     );
+   } else {
++    // disable check
+     // non-segwit
+-    if (
+-      input.nonWitnessUtxo === undefined &&
+-      cache.__UNSAFE_SIGN_NONSEGWIT === false
+-    )
+-      throw new Error(
+-        `Input #${inputIndex} has witnessUtxo but non-segwit script: ` +
+-          `${meaningfulScript.toString('hex')}`,
+-      );
+-    if (!forValidate && cache.__UNSAFE_SIGN_NONSEGWIT !== false)
+-      console.warn(
+-        'Warning: Signing non-segwit inputs without the full parent transaction ' +
+-          'means there is a chance that a miner could feed you incorrect information ' +
+-          "to trick you into paying large fees. This behavior is the same as Psbt's predecessor " +
+-          '(TransactionBuilder - now removed) when signing non-segwit scripts. You are not ' +
+-          'able to export this Psbt with toBuffer|toBase64|toHex since it is not ' +
+-          'BIP174 compliant.\n*********************\nPROCEED WITH CAUTION!\n' +
+-          '*********************',
+-      );
++    // if (
++    //   input.nonWitnessUtxo === undefined &&
++    //   cache.__UNSAFE_SIGN_NONSEGWIT === false
++    // )
++    //   throw new Error(
++    //     `Input #${inputIndex} has witnessUtxo but non-segwit script: ` +
++    //       `${meaningfulScript.toString('hex')}`,
++    //   );
++    // if (!forValidate && cache.__UNSAFE_SIGN_NONSEGWIT !== false)
++    //   console.warn(
++    //     'Warning: Signing non-segwit inputs without the full parent transaction ' +
++    //       'means there is a chance that a miner could feed you incorrect information ' +
++    //       "to trick you into paying large fees. This behavior is the same as Psbt's predecessor " +
++    //       '(TransactionBuilder - now removed) when signing non-segwit scripts. You are not ' +
++    //       'able to export this Psbt with toBuffer|toBase64|toHex since it is not ' +
++    //       'BIP174 compliant.\n*********************\nPROCEED WITH CAUTION!\n' +
++    //       '*********************',
++    //   );
+     hash = unsignedTx.hashForSignature(
+       inputIndex,
+       meaningfulScript,
+@@ -1342,7 +1344,7 @@ function getTaprootHashesForSig(
      }
    }
    const tapLeafHashes = (input.tapLeafScript || [])
