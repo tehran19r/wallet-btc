@@ -17,7 +17,7 @@ import { shortAddress } from '../utils/ui-utils'
 import BigNumber from 'bignumber.js'
 const SWAP_MODULE_ADDRESS = '6a2095ee19329a210f8d5ded9b5cfa55b74fdd3b1e9af1e202072db6d1be82d45bfd'
 const BRIDGE_BURN_ADDRESS = '6a20ada13e56859a2ab2eeb93cb4dc19c6e3f5e94d0ed38ed95a30ddc43711a0ff14'
-
+const BRC20PROG_MODULE_ADDRESS = '6a09425243323050524f47'
 export enum BRC20TokenScreenTabKey {
   DETAILS = 'details',
   HISTORY = 'history',
@@ -84,6 +84,10 @@ export function useBRC20TokenHistoryLogic(props: { ticker: string; displayName?:
             if (item.to === SWAP_MODULE_ADDRESS) {
               mainTitle = t('brc20_history_type_wrap')
               subTitle = t('brc20_history_to') + ' ' + 'InSwap'
+              icon = 'history_wrap'
+            } else if (item.to === BRC20PROG_MODULE_ADDRESS) {
+              mainTitle = t('brc20_history_type_wrap')
+              subTitle = t('brc20_history_to') + ' ' + 'brc2.0'
               icon = 'history_wrap'
             }
           } else if (item.type === 'single-step-transfer') {
