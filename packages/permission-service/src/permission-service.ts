@@ -1,14 +1,8 @@
-// @ts-ignore
-import LRU from 'lru-cache'
+import LRUCacheModule from 'lru-cache'
+// Handle both ESM default export and CommonJS named export
+const LRUCache = (LRUCacheModule as any).LRUCache || LRUCacheModule
 
-import type {
-  ConnectedSite,
-  PermissionStore,
-  PermissionServiceConfig,
-  StorageAdapter,
-  Logger,
-  LRUEntry,
-} from './types'
+import type { ConnectedSite, PermissionStore, PermissionServiceConfig, Logger } from './types'
 import { defaultLogger } from './types'
 import { ChainType } from '@unisat/wallet-types'
 import { ProxyStorageAdapter } from '@unisat/wallet-storage'
@@ -20,7 +14,8 @@ export class PermissionService {
   private store: PermissionStore = {
     dumpCache: [],
   }
-  private lruCache: LRU<string, ConnectedSite> | undefined
+  // @ts-ignore
+  private lruCache: LRUCache<string, ConnectedSite> | undefined
   protected storage: ProxyStorageAdapter = undefined as any
   private storageKey: string = 'permission'
   private logger: Logger = defaultLogger
@@ -53,14 +48,8 @@ export class PermissionService {
       const storedData = await this.storage.get(this.storageKey)
       this.store = storedData || { dumpCache: [] }
 
-      this.lruCache = new LRU()
-      const cache: ReadonlyArray<LRUEntry<string, ConnectedSite>> = (
-        this.store.dumpCache || []
-      ).map(item => ({
-        k: item.k,
-        v: item.v,
-        e: 0,
-      }))
+      this.lruCache = new LRUCache({ max: 1000 })
+      const cache = this.store.dumpCache || []
       this.lruCache.load(cache)
 
       this.sync()
@@ -79,7 +68,7 @@ export class PermissionService {
       dumpCache: [],
     }
 
-    this.lruCache.reset()
+    this.lruCache?.reset()
   }
 
   /**
@@ -198,17 +187,17 @@ export class PermissionService {
     this.lruCache.load(
       sites
         .map((item: ConnectedSite) => ({
-          e: 0,
           k: item.origin,
           v: item,
+          e: 0,
         }))
         .concat(
-          (this.lruCache?.values() || [])
+          [...(this.lruCache?.values() || [])]
             .filter((item: ConnectedSite) => !item.isConnected)
             .map((item: ConnectedSite) => ({
-              e: 0,
               k: item.origin,
               v: item,
+              e: 0,
             }))
         )
     )
@@ -220,7 +209,9 @@ export class PermissionService {
    * Get recent connected sites (ordered with pinned sites first)
    */
   getRecentConnectedSites(): ConnectedSite[] {
-    const sites = (this.lruCache?.values() || []).filter((item: ConnectedSite) => item.isConnected)
+    const sites = [...(this.lruCache?.values() || [])].filter(
+      (item: ConnectedSite) => item.isConnected
+    )
     const pinnedSites = sites
       .filter((item: ConnectedSite) => item?.isTop)
       .sort((a: ConnectedSite, b: ConnectedSite) => (a.order || 0) - (b.order || 0))
@@ -232,7 +223,7 @@ export class PermissionService {
    * Get all connected sites
    */
   getConnectedSites(): ConnectedSite[] {
-    return (this.lruCache?.values() || []).filter((item: ConnectedSite) => item.isConnected)
+    return [...(this.lruCache?.values() || [])].filter((item: ConnectedSite) => item.isConnected)
   }
 
   /**
@@ -298,7 +289,7 @@ export class PermissionService {
    */
   getSitesByDefaultChain(chain: ChainType): ConnectedSite[] {
     if (!this.lruCache) return []
-    return this.lruCache.values().filter((item: ConnectedSite) => item.chain === chain)
+    return [...this.lruCache.values()].filter((item: ConnectedSite) => item.chain === chain)
   }
 
   /**
@@ -325,7 +316,7 @@ export class PermissionService {
   getStats(): { total: number; connected: number; pinned: number } {
     if (!this.lruCache) return { total: 0, connected: 0, pinned: 0 }
 
-    const sites = this.lruCache.values()
+    const sites = [...this.lruCache.values()]
     const connectedSites = sites.filter((site: ConnectedSite) => site.isConnected)
     const pinnedSites = connectedSites.filter((site: ConnectedSite) => site.isTop)
 

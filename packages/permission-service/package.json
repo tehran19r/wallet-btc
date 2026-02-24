@@ -25,8 +25,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "cd ../.. && npx vitest packages/permission-service/test",
-    "test:run": "cd ../.. && npx vitest run packages/permission-service/test",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist"

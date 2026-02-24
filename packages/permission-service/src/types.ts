@@ -1,7 +1,7 @@
 import { ProxyStorageAdapter } from '@unisat/wallet-storage'
 import { ChainType } from '@unisat/wallet-types'
 
-// LRU Cache entry interface
+// LRU Cache entry interface (v6 compatible format used by lru-cache default export)
 export interface LRUEntry<K, V> {
   k: K
   v: V
@@ -27,7 +27,7 @@ export interface ConnectedSite {
  * Permission storage structure
  */
 export interface PermissionStore {
-  dumpCache: ReadonlyArray<LRUEntry<string, ConnectedSite>>
+  dumpCache: LRUEntry<string, ConnectedSite>[]
 }
 
 /**
