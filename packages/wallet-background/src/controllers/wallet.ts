@@ -80,6 +80,7 @@ import {
   NETWORK_TYPES,
 } from '@unisat/wallet-shared'
 import log from 'loglevel'
+import approvalService from 'src/services/approval'
 import { ContactBookItem } from '../services/contactBook'
 import BaseController from './base'
 
@@ -143,10 +144,10 @@ export class WalletController extends BaseController {
   isBooted = async () => keyringService.isBooted()
 
   getApproval = async () => {
-    return notificationService.getApproval()
+    return approvalService.getApproval()
   }
-  resolveApproval = notificationService.resolveApproval
-  rejectApproval = notificationService.rejectApproval
+  resolveApproval = approvalService.resolveApproval
+  rejectApproval = approvalService.rejectApproval
 
   hasVault = () => keyringService.hasVault()
   verifyPassword = (password: string) => keyringService.verifyPassword(password)

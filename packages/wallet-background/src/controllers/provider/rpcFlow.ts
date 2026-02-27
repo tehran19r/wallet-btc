@@ -1,12 +1,13 @@
 import 'reflect-metadata'
 
 import { BUS_EVENTS, BUS_METHODS, ErrorCodes, WalletError } from '@unisat/wallet-shared'
-import { keyringService, notificationService, permissionService } from '../../services'
+import { keyringService, permissionService } from '../../services'
 import { PromiseFlow, underline2Camelcase } from '../../utils'
 
 import providerController from './controller'
 
 import { ChainType } from '@unisat/wallet-types'
+import approvalService from 'src/services/approval'
 import { bgEventBus } from 'src/utils/eventBus'
 
 class UnlockManager {
@@ -23,7 +24,7 @@ class UnlockManager {
     }
 
     this.isUnlocking = true
-    this.unlockPromise = notificationService.requestApproval({ lock: true }).finally(() => {
+    this.unlockPromise = approvalService.requestApproval({ lock: true }).finally(() => {
       this.isUnlocking = false
       this.unlockPromise = null
     })
@@ -83,7 +84,7 @@ const flowContext = flow
           return []
         }
         ctx.request.requestedApproval = true
-        await notificationService.requestApproval(
+        await approvalService.requestApproval(
           {
             params: {
               method: 'connect',
@@ -119,7 +120,7 @@ const flowContext = flow
 
     if (approvalType && skipApproval != true) {
       ctx.request.requestedApproval = true
-      ctx.approvalRes = await notificationService.requestApproval(
+      ctx.approvalRes = await approvalService.requestApproval(
         {
           approvalComponent: approvalType,
           params: {
@@ -183,7 +184,7 @@ const flowContext = flow
 
     async function requestApprovalLoop({ uiRequestComponent, ...rest }) {
       ctx.request.requestedApproval = true
-      const res = await notificationService.requestApproval({
+      const res = await approvalService.requestApproval({
         approvalComponent: uiRequestComponent,
         params: rest,
         origin,
@@ -211,7 +212,7 @@ export default request => {
     if (ctx.request.requestedApproval) {
       flow.requestedApproval = false
       // only unlock notification if current flow is an approval flow
-      notificationService.unLock()
+      approvalService.unLock()
     }
   })
 }

@@ -11,6 +11,7 @@ export { type ProviderMethodArgs, type ProviderMethods } from './controllers/pro
 
 // Services
 export {
+  approvalService,
   contactBookService,
   keyringService,
   notificationService,

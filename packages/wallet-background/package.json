@@ -38,6 +38,7 @@
     "@unisat/phishing-detect": "workspace:*",
     "@unisat/preference-service": "workspace:*",
     "@unisat/notification-service": "workspace:*",
+    "@unisat/approval-service": "workspace:*",
     "@unisat/tx-helpers": "workspace:*",
     "@unisat/wallet-api": "workspace:*",
     "@unisat/wallet-bitcoin": "workspace:*",

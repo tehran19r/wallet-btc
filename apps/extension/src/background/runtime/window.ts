@@ -1,11 +1,12 @@
-import { notificationService } from '@unisat/wallet-background';
+import { approvalService } from '@unisat/wallet-background';
+
 import { winMgr } from '../webapi';
 
 export function initWindow() {
   winMgr.event.on('windowRemoved', (winId: number) => {
-    if (winId === notificationService.notifiWindowId) {
-      notificationService.notifiWindowId = 0;
-      notificationService.rejectApproval();
+    if (winId === approvalService.approvalWindowId) {
+      approvalService.approvalWindowId = 0;
+      approvalService.rejectApproval();
     }
   });
 
@@ -13,15 +14,15 @@ export function initWindow() {
     // todo
   });
 
-  notificationService.platformOpenWindow = async (winProps) => {
-    if (notificationService.notifiWindowId) {
-      winMgr.remove(notificationService.notifiWindowId);
+  approvalService.platformOpenWindow = async (winProps) => {
+    if (approvalService.approvalWindowId) {
+      winMgr.remove(approvalService.approvalWindowId);
     }
     const winId = await winMgr.openNotification(winProps);
     return winId || 1;
   };
 
-  notificationService.platformCloseWindow = async (winId) => {
+  approvalService.platformCloseWindow = async (winId) => {
     await winMgr.remove(winId);
   };
 }
