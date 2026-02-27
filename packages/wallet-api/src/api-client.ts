@@ -14,15 +14,20 @@ export * from './services'
 export * from './types'
 
 // Export main client class
-import { BaseHttpClient, HttpClient } from './client/http-client'
-import { BitcoinService } from './services/bitcoin'
-import { InscriptionsService } from './services/inscriptions'
-import { BRC20Service } from './services/brc20'
-import { RunesService } from './services/runes'
+import { BaseHttpClient } from './client/http-client'
+import {
+  CATService,
+  ConfigService,
+  MarketService,
+  NotificationService,
+  UtilityService,
+} from './services'
 import { AlkanesService } from './services/alkanes'
-import type { ClientConfig } from './types'
-import { CATService, ConfigService, MarketService, UtilityService } from './services'
+import { BitcoinService } from './services/bitcoin'
+import { BRC20Service } from './services/brc20'
 import { DomainService } from './services/domain'
+import { InscriptionsService } from './services/inscriptions'
+import { RunesService } from './services/runes'
 
 /**
  * Unified API Client - Matches all methods from openapi.ts
@@ -38,6 +43,7 @@ export class UniSatApiClient {
   public readonly domain: DomainService
   public readonly utility: UtilityService
   public readonly config: ConfigService
+  public readonly notification: NotificationService
 
   private readonly httpClient: BaseHttpClient
 
@@ -55,6 +61,7 @@ export class UniSatApiClient {
     this.domain = new DomainService(this.httpClient)
     this.utility = new UtilityService(this.httpClient)
     this.config = new ConfigService(this.httpClient)
+    this.notification = new NotificationService(this.httpClient)
   }
 
   // ========================================

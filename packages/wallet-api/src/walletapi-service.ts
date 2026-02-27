@@ -1,8 +1,7 @@
-import { CHAINS_MAP, PlatformEnv } from '@unisat/wallet-shared'
-import { HttpClient, UniSatApiClient } from './api-client'
-import { ChainType } from '@unisat/wallet-types'
+import { PlatformEnv } from '@unisat/wallet-shared'
 import { ProxyStorageAdapter } from '@unisat/wallet-storage'
 import randomstring from 'randomstring'
+import { UniSatApiClient } from './api-client'
 import { BaseHttpClient } from './client/http-client'
 
 interface WalletApiStore {
@@ -145,5 +144,9 @@ export class WalletApiService {
   }
   get config() {
     return this.client.config
+  }
+
+  get notification() {
+    return this.client.notification
   }
 }
