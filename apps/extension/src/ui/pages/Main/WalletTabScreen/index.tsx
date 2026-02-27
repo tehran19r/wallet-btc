@@ -17,9 +17,6 @@ import '@unisat/wallet-state';
 import {
   AssetTabKey,
   uiActions,
-  useAccountBalance,
-  useAddressSummary,
-  useAddressTips,
   useAppDispatch,
   useAssetTabKey,
   useChain,
@@ -31,8 +28,7 @@ import {
   useSkipVersionCallback,
   useSupportedAssets,
   useVersionInfo,
-  useWallet,
-  useWalletConfig
+  useWallet
 } from '@unisat/wallet-state';
 
 import { useNavigate } from '../../MainRoute';
@@ -42,7 +38,9 @@ import { CATTab } from './CATTab';
 import { OrdinalsTab } from './OrdinalsTab';
 import { RunesList } from './RunesList';
 import { SidePanelExpand } from './SidePanelExpand';
+import { AnnouncementCard } from './components/AnnouncementCard';
 import { BalanceCard } from './components/BalanceCard';
+import { HomeTips } from './components/HomeTips';
 import { WalletActions } from './components/WalletActions';
 
 const STORAGE_VERSION_KEY = 'version_detail';
@@ -51,11 +49,7 @@ export default function WalletTabScreen() {
   const { t } = useI18n();
   const navigate = useNavigate();
 
-  const accountBalance = useAccountBalance();
-
   const chain = useChain();
-
-  const addressTips = useAddressTips();
 
   const currentKeyring = useCurrentKeyring();
   const currentAccount = useCurrentAccount();
@@ -67,13 +61,10 @@ export default function WalletTabScreen() {
 
   const skipVersion = useSkipVersionCallback();
 
-  const walletConfig = useWalletConfig();
   const versionInfo = useVersionInfo();
 
   const [showSafeNotice, setShowSafeNotice] = useState(false);
   const [showVersionNotice, setShowVersionNotice] = useState<VersionDetail | null>(null);
-
-  const addressSummary = useAddressSummary();
 
   const nav = useNavigation();
   const isUnlocked = useIsUnlocked();
@@ -219,25 +210,12 @@ export default function WalletTabScreen() {
         <AccountSelect />
 
         <Column gap="lg2" mt="md">
-          {(walletConfig.chainTip || walletConfig.statusMessage || addressTips.homeTip) && (
-            <Column
-              py={'lg'}
-              px={'md'}
-              gap={'lg'}
-              style={{
-                borderRadius: 12,
-                border: '1px solid rgba(245, 84, 84, 0.35)',
-                background: 'rgba(245, 84, 84, 0.08)'
-              }}>
-              {walletConfig.chainTip && <Text text={walletConfig.chainTip} color="text" textCenter />}
-              {walletConfig.statusMessage && <Text text={walletConfig.statusMessage} color="danger" textCenter />}
-              {addressTips.homeTip && <Text text={addressTips.homeTip} color="warning" textCenter />}
-            </Column>
-          )}
+          <HomeTips />
 
           <BalanceCard />
-
           <WalletActions address={currentAccount?.address} chain={chain} />
+
+          <AnnouncementCard />
 
           <Tabs
             defaultActiveKey={finalAssetTabKey as unknown as string}

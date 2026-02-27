@@ -1,6 +1,7 @@
 export { useAddressTypeScreenLogic } from './useAddressTypeScreenLogic'
 export { useAlkanesListLogic } from './useAlkanesListLogic'
 export { useAmountInputLogic } from './useAmountInputLogic'
+export { useAnnouncementCardLogic } from './useAnnouncementCardLogic'
 export {
   BRC20SendTabKey,
   useBRC20SendScreenLogic,
