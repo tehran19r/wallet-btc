@@ -1,1 +1,0 @@
-# @unisat/notification-service

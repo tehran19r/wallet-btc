@@ -4,9 +4,9 @@ import { Approval } from './types'
 
 // something need user approval in window
 // should only open one window, unfocus will close the current notification
-export class NotificationService extends EventEmitter {
+export class ApprovalService extends EventEmitter {
   approval: Approval | null = null
-  public notifiWindowId = 0
+  public approvalWindowId = 0
   isLocked = false
 
   constructor() {
@@ -64,10 +64,9 @@ export class NotificationService extends EventEmitter {
 
   clear = async (stay = false) => {
     this.approval = null
-    if (this.notifiWindowId && !stay) {
-      // Platform-specific window management will be handled by adapters
-      await this.platformCloseWindow(this.notifiWindowId)
-      this.notifiWindowId = 0
+    if (this.approvalWindowId && !stay) {
+      await this.platformCloseWindow(this.approvalWindowId)
+      this.approvalWindowId = 0
     }
   }
 
@@ -80,11 +79,11 @@ export class NotificationService extends EventEmitter {
   }
 
   openNotification = async (winProps?: any) => {
-    if (this.notifiWindowId) {
-      await this.platformCloseWindow(this.notifiWindowId)
-      this.notifiWindowId = 0
+    if (this.approvalWindowId) {
+      await this.platformCloseWindow(this.approvalWindowId)
+      this.approvalWindowId = 0
     }
-    this.notifiWindowId = await this.platformOpenWindow(winProps)
+    this.approvalWindowId = await this.platformOpenWindow(winProps)
   }
 
   platformOpenWindow = async (winProps?: any): Promise<number> => {

@@ -1,5 +1,5 @@
 {
-  "name": "@unisat/notification-service",
+  "name": "@unisat/approval-service",
   "version": "1.0.0",
   "description": "Cross-platform permission management service for web3 applications",
   "main": "lib/index.js",
@@ -25,8 +25,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "cd ../.. && npx vitest packages/notification-service/test",
-    "test:run": "cd ../.. && npx vitest run packages/notification-service/test",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist"
