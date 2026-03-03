@@ -1,6 +1,7 @@
-import { Column, Icon, Image, Row, Text } from '@/ui/components';
+import { Column, Icon, Image, Row, Text, Tooltip } from '@/ui/components';
 import { BtcUsd } from '@/ui/components/BtcUsd';
 import { RefreshButton } from '@/ui/components/RefreshButton';
+import { fontSizes } from '@/ui/theme/font';
 import { useBalanceCardLogic } from '@unisat/wallet-state';
 
 import { BtcDisplay } from './BtcDisplay';
@@ -73,16 +74,19 @@ export function BalanceCard() {
       {isDetailExpanded && isCurrentChainBalance && (
         <Row
           justifyBetween
+          itemsCenter
           style={{
             width: '100%',
             padding: 12,
             backgroundColor: '#F1CC9F',
-            borderRadius: 16,
-            alignItems: 'center'
+            borderRadius: 16
           }}>
-          <Column style={{ flex: 1 }} gap={'md'}>
-            <Text color={'black_65'} size="xs" text={t('available')} style={{ fontWeight: 500 }}></Text>
-            <BtcDisplay small balance={availableAmount} hideBalance={isBalanceHidden} />
+          <Column style={{ flex: 1 }} gap={'zero'}>
+            <Row>
+              <Text color={'black_65'} size="xs" text={t('available')} style={{ fontWeight: 500 }}></Text>
+              <Row style={{ height: 20 }} />
+            </Row>
+            <BtcDisplay preset="sub" balance={availableAmount} hideBalance={isBalanceHidden} />
           </Column>
 
           <div
@@ -94,34 +98,30 @@ export function BalanceCard() {
             }}
           />
 
-          <Row style={{ flex: 1 }} itemsCenter gap="zero">
-            <Column style={{ flex: 1 }} gap={'md'}>
-              <Row itemsCenter>
-                <Text color={'black_65'} size="xs" text={t('unavailable')} style={{ fontWeight: 500 }}></Text>
-                {showUtxoToolButton ? (
-                  <Row
-                    onClick={() => {
-                      handleUnlock();
-                    }}>
-                    <Row
-                      style={{
-                        height: 16,
-                        paddingLeft: 4,
-                        paddingRight: 4,
-                        borderRadius: 14,
-                        backgroundColor: '#000',
-                        alignItems: 'center',
-                        gap: 4
-                      }}>
-                      <Text text={t('unlock')} size="xxs" />
-                      <Icon icon={'right'} size={14} />
-                    </Row>
-                  </Row>
-                ) : null}
-              </Row>
-              <BtcDisplay small balance={unavailableAmount} hideBalance={isBalanceHidden} />
-            </Column>
-          </Row>
+          <Column style={{ flex: 1 }} gap={'zero'}>
+            <Row itemsCenter>
+              <Text color={'black_65'} size="xs" text={t('unavailable')} style={{ fontWeight: 500 }}></Text>
+              <Tooltip
+                title={`If your balance shows as unavailable, it may be because your UTXOs are locked due to containing inscriptions, runes, brc-20 assets, or being unconfirmed. In most cases, you can use our UTXO Management Tool to unlock these UTXOs and make them spendable again. `}
+                overlayStyle={{
+                  fontSize: fontSizes.xs
+                }}>
+                <Icon icon="balance-question" size={20} />
+              </Tooltip>
+            </Row>
+            <BtcDisplay preset="sub" balance={unavailableAmount} hideBalance={isBalanceHidden} />
+          </Column>
+
+          {showUtxoToolButton ? (
+            <Icon
+              style={{ flex: 1, cursor: 'pointer' }}
+              icon={'unlock'}
+              size={28}
+              onClick={() => {
+                handleUnlock();
+              }}
+            />
+          ) : null}
         </Row>
       )}
     </Column>

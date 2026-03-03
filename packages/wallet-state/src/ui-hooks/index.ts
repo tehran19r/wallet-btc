@@ -102,3 +102,4 @@ export {
 export { useSettingsTabScreenLogic, type SettingsItemType } from './useSettingsTabScreenLogic'
 
 export { useBalanceCardLogic } from './useBalanceCardLogic'
+export { useBtcDisplayLogic } from './useBtcDisplayLogic'

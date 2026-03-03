@@ -1,119 +1,101 @@
-import { useMemo } from 'react';
-
 import { Column, Row, Text } from '@/ui/components';
-import { useBTCUnit, useChainType } from '@unisat/wallet-state';
-import { ChainType } from '@unisat/wallet-types';
+import { useBtcDisplayLogic, useBTCUnit, useChainType } from '@unisat/wallet-state';
+
+type Presets = keyof typeof $viewPresets;
+
+const $viewPresets = {
+  main: {
+    mainPartSize: 28,
+    subPartSize: 20,
+    unitPartSize: 20,
+    mainPartColor: '#000',
+    subPartColor: 'rgba(0, 0, 0, 0.5)',
+    unitPartColor: '#000',
+    subPartMarginBottom: 2
+  },
+  sub: {
+    mainPartSize: 12,
+    subPartSize: 12,
+    unitPartSize: 12,
+    mainPartColor: '#000',
+    subPartColor: 'rgba(0, 0, 0, 0.5)',
+    unitPartColor: '#000',
+    subPartMarginBottom: 0
+  }
+};
 
 export function BtcDisplay({
   balance,
-  small,
-  hideBalance
+  hideBalance,
+  preset
 }: {
   balance: string;
-  small?: boolean;
   hideBalance?: boolean;
+  preset?: Presets;
 }) {
   const chainType = useChainType();
   const btcUnit = useBTCUnit();
-  const { intPart, decPart } = useMemo(() => {
-    //   split balance into integer and decimal parts
-    const [intPart, decPart] = balance.split('.');
+  const $style = preset ? $viewPresets[preset] : $viewPresets['main'];
 
-    return {
-      intPart,
-      decPart: decPart || ''
-    };
-  }, [balance]);
+  const { totalAmountMainPart, totalAmountSubPart } = useBtcDisplayLogic(balance);
 
-  const isBTCChain =
-    chainType === ChainType.BITCOIN_MAINNET ||
-    chainType === ChainType.BITCOIN_TESTNET ||
-    chainType === ChainType.BITCOIN_TESTNET4 ||
-    chainType === ChainType.BITCOIN_SIGNET;
+  const hiddenComponent = (
+    <Column justifyCenter>
+      <Text
+        text={'****'}
+        preset="title-bold"
+        size="xxl"
+        style={{
+          fontSize: $style.mainPartSize,
+          color: $style.mainPartColor
+        }}
+      />
+    </Column>
+  );
 
+  const unitComponent = (
+    <Column justifyCenter mx="sm">
+      <Text
+        text={btcUnit}
+        preset="title-bold"
+        textCenter
+        style={{
+          fontSize: $style.unitPartSize,
+          color: $style.unitPartColor,
+          marginBottom: $style.subPartMarginBottom
+        }}
+      />
+    </Column>
+  );
   if (hideBalance) {
     return (
       <Row itemsCenter>
-        <Column justifyCenter>
-          <Text
-            text={hideBalance ? '****' : balance}
-            preset="title-bold"
-            size="xxl"
-            style={{
-              fontSize: small ? 12 : 28,
-              color: small ? 'rgba(0, 0, 0, 0.5)' : '#000'
-            }}
-          />
-        </Column>
-        <Column justifyCenter>
-          <Text
-            text={btcUnit}
-            preset="title-bold"
-            textCenter
-            style={{
-              fontSize: small ? 12 : 28,
-              color: '#000'
-            }}
-          />
-        </Column>
-      </Row>
-    );
-  }
-
-  if (chainType === 'FRACTAL_BITCOIN_MAINNET' || chainType === 'FRACTAL_BITCOIN_TESTNET') {
-    //   show 3 decimal places for fractal bitcoin
-    let decimalPlaces = 3;
-    if (parseInt(balance) < 1) {
-      decimalPlaces = 8;
-    }
-    return (
-      <Row style={{ alignItems: 'flex-end' }} justifyCenter gap={'zero'} my="sm">
-        <Text text={intPart} preset="title-bold" size="xxxl" color={isBTCChain ? 'white' : undefined} />
-        {decPart && (
-          <Text
-            text={'.' + decPart.slice(0, decimalPlaces)}
-            preset="title-bold"
-            style={{
-              color: isBTCChain ? '#FFFFFF' : '#8a8a8a',
-              fontSize: 28
-            }}
-          />
-        )}
-        <Text
-          text={btcUnit}
-          preset="title-bold"
-          size="xxxl"
-          style={{ marginLeft: '0.25em' }}
-          color={isBTCChain ? 'white' : undefined}
-        />
+        {hiddenComponent}
+        {preset !== 'sub' && unitComponent}
       </Row>
     );
   }
 
   return (
-    <Row itemsCenter>
-      <Column justifyCenter>
-        <Text
-          text={hideBalance ? '****' : balance}
-          preset="title-bold"
-          style={{
-            fontSize: small ? 12 : 24,
-            color: small ? 'rgba(0, 0, 0, 0.5)' : '#000'
-          }}
-        />
-      </Column>
-      <Column justifyCenter>
-        <Text
-          text={btcUnit}
-          preset="title-bold"
-          textCenter
-          style={{
-            fontSize: small ? 12 : 24,
-            color: '#000'
-          }}
-        />
-      </Column>
-      {/* <Text text={balance + ' ' + btcUnit} preset="title-bold" textCenter size="xxxl" my="sm" /> */}
+    <Row itemsEnd gap="zero">
+      <Text
+        text={totalAmountMainPart}
+        preset="title-bold"
+        style={{
+          fontSize: $style.mainPartSize,
+          color: $style.mainPartColor
+        }}
+      />
+      <Text
+        text={totalAmountSubPart}
+        preset="title-bold"
+        style={{
+          fontSize: $style.subPartSize,
+          color: $style.subPartColor,
+          marginBottom: $style.subPartMarginBottom
+        }}
+      />
+      {preset !== 'sub' && unitComponent}
     </Row>
   );
 }

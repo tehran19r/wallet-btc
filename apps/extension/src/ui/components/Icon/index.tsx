@@ -132,7 +132,9 @@ export const svgRegistry = {
 
   psbt_input: '/images/icons/psbt_input.svg',
   psbt_output: '/images/icons/psbt_output.svg',
-  psbt_opreturn: '/images/icons/psbt_opreturn.svg'
+  psbt_opreturn: '/images/icons/psbt_opreturn.svg',
+
+  unlock: '/images/icons/unlock.svg'
 };
 
 const iconImgList: Array<IconTypes> = [
@@ -189,7 +191,8 @@ const iconImgList: Array<IconTypes> = [
   'psbt_input',
   'psbt_output',
   'psbt_opreturn',
-  'notification'
+  'notification',
+  'unlock'
 ];
 
 export type IconTypes = keyof typeof svgRegistry;
@@ -267,7 +270,8 @@ export function Icon(props: IconProps) {
         alt=""
         style={Object.assign({}, $containerStyleOverride, {
           width: size || fontSizes.icon,
-          height: size || fontSizes.icon
+          height: size || fontSizes.icon,
+          cursor: onClick ? 'pointer' : 'default'
         })}
       />
     );
