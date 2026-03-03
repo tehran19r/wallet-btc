@@ -2500,5 +2500,8 @@
   },
   "trust_this_site_for_quick_multi_sign": {
     "message": "このサイトを信頼し、このプロンプトを再表示しない"
+  },
+  "copy_publickey": {
+    "message": "公開鍵をコピー"
   }
 }

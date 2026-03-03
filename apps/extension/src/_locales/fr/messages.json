@@ -2500,5 +2500,8 @@
   },
   "trust_this_site_for_quick_multi_sign": {
     "message": "Faire confiance à ce site et ne plus afficher cette invite"
+  },
+  "copy_publickey": {
+    "message": "Copier la clé publique"
   }
 }

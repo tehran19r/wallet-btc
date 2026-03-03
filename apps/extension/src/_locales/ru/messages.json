@@ -2500,5 +2500,8 @@
   },
   "trust_this_site_for_quick_multi_sign": {
     "message": "Доверять этому сайту и больше не показывать это сообщение"
+  },
+  "copy_publickey": {
+    "message": "Копировать публичный ключ"
   }
 }
