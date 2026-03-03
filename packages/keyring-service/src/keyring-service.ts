@@ -78,11 +78,13 @@ class DisplayKeyring {
   accounts: string[] = []
   type = ''
   hdPath = ''
+  accountIndexDerivation = false
 
   constructor(keyring: Keyring) {
     this.accounts = keyring.accounts || []
     this.type = keyring.type
     this.hdPath = (keyring as any).hdPath
+    this.accountIndexDerivation = (keyring as any).accountIndexDerivation ?? false
   }
 }
 
@@ -382,7 +384,8 @@ export class KeyringService extends EventEmitter {
     hdPath: string,
     passphrase: string,
     addressType: AddressType,
-    accountCount: number
+    accountCount: number,
+    accountIndexDerivation = false
   ) => {
     if (accountCount < 1) {
       throw new Error(this.t('keyring_error_account_count'))
@@ -404,6 +407,7 @@ export class KeyringService extends EventEmitter {
         activeIndexes,
         hdPath,
         passphrase,
+        accountIndexDerivation,
       },
       addressType
     )

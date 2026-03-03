@@ -8,6 +8,7 @@ export type WalletKeyring = {
   accounts: Account[]
   alianName: string
   hdPath: string
+  accountIndexDerivation?: boolean
 }
 
 export interface Account {

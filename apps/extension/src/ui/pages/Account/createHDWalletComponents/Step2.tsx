@@ -8,7 +8,7 @@ import { useNavigate } from '@/ui/pages/MainRoute';
 import { satoshisToAmount } from '@/ui/utils';
 import { isValidHdPath } from '@/ui/utils/bitcoin-utils';
 import { LoadingOutlined } from '@ant-design/icons';
-import { ADDRESS_TYPES, getRestoreWallets } from '@unisat/wallet-shared';
+import { ADDRESS_TYPES, RESTORE_WALLETS, RestoreWalletType, getAccountDerivationPath } from '@unisat/wallet-shared';
 import { useCreateAccountCallback, useI18n, useTools, useWallet } from '@unisat/wallet-state';
 import { AddressType } from '@unisat/wallet-types';
 
@@ -24,7 +24,7 @@ export function Step2({
   const { t } = useI18n();
 
   const hdPathOptions = useMemo(() => {
-    const restoreWallet = getRestoreWallets()[contextData.restoreWalletType];
+    const restoreWallet = RESTORE_WALLETS[contextData.restoreWalletType];
     return ADDRESS_TYPES.filter((v) => {
       if (v.displayIndex < 0) {
         return false;
@@ -83,6 +83,7 @@ export function Step2({
 
   const createAccount = useCreateAccountCallback();
   const navigate = useNavigate();
+  const isMagicEden = contextData.restoreWalletType === RestoreWalletType.MAGIC_EDEN;
 
   const [pathText, setPathText] = useState(contextData.customHdPath);
 
@@ -108,7 +109,9 @@ export function Step2({
           contextData.mnemonics,
           contextData.customHdPath || options.hdPath,
           contextData.passphrase,
-          options.addressType
+          options.addressType,
+          1,
+          isMagicEden
         );
         // const address = keyring.accounts[0].address;
         // addresses.push(address);
@@ -210,12 +213,13 @@ export function Step2({
           hdPath,
           contextData.passphrase,
           contextData.addressType,
-          selected.address_arr.length
+          selected.address_arr.length,
+          isMagicEden
         );
       } else {
         const option = hdPathOptions[contextData.addressTypeIndex];
         const hdPath = contextData.customHdPath || option.hdPath;
-        await createAccount(contextData.mnemonics, hdPath, contextData.passphrase, contextData.addressType, 1);
+        await createAccount(contextData.mnemonics, hdPath, contextData.passphrase, contextData.addressType, 1, isMagicEden);
       }
       navigate('MainScreen');
     } catch (e) {
@@ -238,7 +242,8 @@ export function Step2({
             contextData.customHdPath || options.hdPath,
             contextData.passphrase,
             options.addressType,
-            10
+            10,
+            isMagicEden
           );
           keyring.accounts.forEach((v, j) => {
             address_arr.push(v.address);
@@ -301,7 +306,7 @@ export function Step2({
               items={item.address_arr.map((v, index) => ({
                 address: v,
                 satoshis: item.satoshis_arr[index],
-                path: (contextData.customHdPath || options.hdPath) + '/' + index
+                path: getAccountDerivationPath(contextData.customHdPath || options.hdPath, index, isMagicEden)
               }))}
               checked={index == contextData.addressTypeIndex}
               onClick={() => {
@@ -327,7 +332,7 @@ export function Step2({
             return null;
           }
 
-          const hdPath = (contextData.customHdPath || item.hdPath) + '/0';
+          const hdPath = getAccountDerivationPath(contextData.customHdPath || item.hdPath, 0, isMagicEden);
           return (
             <AddressTypeCard2
               key={index}
@@ -380,7 +385,13 @@ export function Step2({
       />
 
       <FooterButtonContainer>
-        <Button text={t('continue')} preset="primary" onClick={onNext} disabled={disabled} data-testid="address-type-continue-button" />
+        <Button
+          text={t('continue')}
+          preset="primary"
+          onClick={onNext}
+          disabled={disabled}
+          data-testid="address-type-continue-button"
+        />
       </FooterButtonContainer>
 
       {loading && (

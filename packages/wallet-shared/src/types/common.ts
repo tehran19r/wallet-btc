@@ -7,11 +7,12 @@ export enum PaymentChannelType {
 }
 
 export enum RestoreWalletType {
-  UNISAT,
-  SPARROW,
-  XVERSE,
-  OW,
-  OTHERS,
+  UNISAT = 0,
+  MAGIC_EDEN = 1,
+  XVERSE = 2,
+  SPARROW = 3,
+  OW = 4,
+  OTHERS = 5,
 }
 
 export interface Chain {

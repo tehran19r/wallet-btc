@@ -231,14 +231,16 @@ export function useCreateAccountCallback() {
       hdPath: string,
       passphrase: string,
       addressType: AddressType,
-      accountCount: number
+      accountCount: number,
+      accountIndexDerivation = false
     ) => {
       await wallet.createKeyringWithMnemonics(
         mnemonics,
         hdPath,
         passphrase,
         addressType,
-        accountCount
+        accountCount,
+        accountIndexDerivation
       )
       dispatch(globalActions.update({ isUnlocked: true }))
     },

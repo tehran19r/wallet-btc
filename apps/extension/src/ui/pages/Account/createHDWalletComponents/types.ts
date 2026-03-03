@@ -1,4 +1,4 @@
-import { RestoreWalletType } from '@unisat/wallet-shared';
+import { RestoreWalletType, WordsType } from '@unisat/wallet-shared';
 import { AddressType } from '@unisat/wallet-types';
 
 export enum TabType {
@@ -10,11 +10,6 @@ export enum TabType {
   CHOOSE_RESTORE_WALLET = 'CHOOSE_RESTORE_WALLET',
   KEYSTONE_WALLET = 'KEYSTONE_WALLET',
   KEYSTONE_ADDRESS_TYPE = 'KEYSTONE_ADDRESS_TYPE'
-}
-
-export enum WordsType {
-  WORDS_12,
-  WORDS_24
 }
 
 export interface ContextData {

@@ -1,15 +1,10 @@
-import { OW_HD_PATH, RestoreWalletType } from '@unisat/wallet-shared'
+import { OW_HD_PATH, RESTORE_WALLETS, RestoreWalletType, WordsType } from '@unisat/wallet-shared'
 import { AddressType } from '@unisat/wallet-types'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n, useNavigation, useTools, useWallet } from 'src/context'
 import { useAppDispatch, useCreateAccountCallback } from 'src/hooks'
 import { accountActions, keyringsActions } from 'src/reducers'
 import { validateMnemonic } from 'src/utils/bitcoin-utils'
-
-export enum WordsType {
-  WORDS_12,
-  WORDS_24,
-}
 
 export enum TabType {
   STEP1 = 'STEP1',
@@ -86,10 +81,18 @@ export function useCreateWalletLogicImportWordsStep(params: CreateWalletLogicPar
   const { contextData, updateContextData } = params
   const { t } = useI18n()
   const wordsItems: Array<WordsItem> = useMemo(() => {
-    if (contextData.restoreWalletType === RestoreWalletType.OW) {
-      return [getWords12Item(t)]
-    } else if (contextData.restoreWalletType === RestoreWalletType.XVERSE) {
-      return [getWords12Item(t)]
+    const walletTypeConfig = RESTORE_WALLETS.find(
+      item => item.value === contextData.restoreWalletType
+    )
+    const supportedWordsItems: WordsItem[] = []
+    if (walletTypeConfig) {
+      if (walletTypeConfig.wordsTypes.includes(WordsType.WORDS_12)) {
+        supportedWordsItems.push(getWords12Item(t))
+      }
+      if (walletTypeConfig.wordsTypes.includes(WordsType.WORDS_24)) {
+        supportedWordsItems.push(getWords24Item(t))
+      }
+      return supportedWordsItems
     } else {
       return [getWords12Item(t), getWords24Item(t)]
     }

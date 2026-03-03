@@ -16,6 +16,7 @@ interface DeserializeOption {
   xpriv?: string
   activeIndexes?: number[]
   passphrase?: string
+  accountIndexDerivation?: boolean
 }
 
 export class HdKeyring extends SimpleKeyring {
@@ -29,6 +30,7 @@ export class HdKeyring extends SimpleKeyring {
 
   // m / purpose' / coin_type' / account' / change / address_index
   hdPath = hdPathString
+  accountIndexDerivation = false
   root: bitcore.HDPrivateKey = null
   hdWallet?: any
   override wallets: ECPairInterface[] = []
@@ -51,6 +53,7 @@ export class HdKeyring extends SimpleKeyring {
       activeIndexes: this.activeIndexes,
       hdPath: this.hdPath,
       passphrase: this.passphrase,
+      accountIndexDerivation: this.accountIndexDerivation,
     }
   }
 
@@ -64,6 +67,7 @@ export class HdKeyring extends SimpleKeyring {
     this.xpriv = ''
     this.root = null
     this.hdPath = opts.hdPath || hdPathString
+    this.accountIndexDerivation = opts.accountIndexDerivation ?? false
     if (opts.passphrase) {
       this.passphrase = opts.passphrase
     }
@@ -129,13 +133,30 @@ export class HdKeyring extends SimpleKeyring {
     if (!this.mnemonic) {
       throw new Error('Btc-Hd-Keyring: Not support')
     }
-    const root = this.hdWallet.derive(hdPath)
-    const child = root.deriveChild(index)
+    let derivePath: string
+    let deriveIndex: number
+    if (this.accountIndexDerivation) {
+      derivePath = this._buildAccountLevelPath(hdPath, index)
+      deriveIndex = 0
+    } else {
+      derivePath = hdPath
+      deriveIndex = index
+    }
+    const root = this.hdWallet.derive(derivePath)
+    const child = root.deriveChild(deriveIndex)
     const ecpair = eccManager.eccPair.fromPrivateKey(child.privateKey, {
       network: this.network,
     })
     const address = ecpair.publicKey.toString('hex')
     return address
+  }
+
+  // Build a path where account segment (index 3) is replaced by accountIndex
+  // e.g. "m/84'/0'/0'/0" + accountIndex=2 → "m/84'/0'/2'/0"
+  private _buildAccountLevelPath(hdPath: string, accountIndex: number): string {
+    const segments = hdPath.split('/')
+    segments[3] = `${accountIndex}'`
+    return segments.join('/')
   }
 
   override addAccounts(numberOfAccounts = 1) {
@@ -242,10 +263,17 @@ export class HdKeyring extends SimpleKeyring {
 
   private _addressFromIndex(i: number) {
     if (!this._index2wallet[i]) {
-      const child = this.root.deriveChild(i)
-      const ecpair = eccManager.eccPair.fromPrivateKey(child.privateKey, {
-        network: this.network,
-      })
+      let ecpair: ECPairInterface
+      if (this.accountIndexDerivation) {
+        // MagicEden style: m/84'/0'/i'/0/0 — vary account index, address index = 0
+        const path = this._buildAccountLevelPath(this.hdPath, i)
+        const root = this.hdWallet.derive(path)
+        const child = root.deriveChild(0)
+        ecpair = eccManager.eccPair.fromPrivateKey(child.privateKey, { network: this.network })
+      } else {
+        const child = this.root.deriveChild(i)
+        ecpair = eccManager.eccPair.fromPrivateKey(child.privateKey, { network: this.network })
+      }
       const address = ecpair.publicKey.toString('hex')
       this._index2wallet[i] = [address, ecpair]
     }

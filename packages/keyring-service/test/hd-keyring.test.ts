@@ -207,6 +207,83 @@ describe('bitcoin-hd-keyring', () => {
     })
   })
 
+  describe('MagicEden account-index derivation', () => {
+    // MagicEden varies the BIP44 account segment instead of the address index:
+    //   m/86'/0'/{i}'/0/0  and  m/84'/0'/{i}'/0/0
+    // activeIndexes [0,1,2] correspond to account indices 0,1,2.
+
+    it('P2TR (m/86): derives 3 accounts at account-index level', async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0, 1, 2],
+        hdPath: "m/86'/0'/0'/0",
+        accountIndexDerivation: true,
+      })
+
+      const accounts = await keyring.getAccounts()
+      expect(accounts[0]).eq('02ed399b9a6d5c2bc47371bf8eafd59f2a02e81d24850013cbb2eb621bf183d748') // m/86'/0'/0'/0/0
+      expect(accounts[1]).eq('0215460951216224652a468a59634428747807e402c738d8dc71349b2a4d9f94b9') // m/86'/0'/1'/0/0
+      expect(accounts[2]).eq('03067fcd71e9ebe4b6f8f55671186d88c683d7421b59b3a75355379112124b1d60') // m/86'/0'/2'/0/0
+    })
+
+    it('P2WPKH (m/84): derives 3 accounts at account-index level', async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0, 1, 2],
+        hdPath: "m/84'/0'/0'/0",
+        accountIndexDerivation: true,
+      })
+
+      const accounts = await keyring.getAccounts()
+      expect(accounts[0]).eq('02d16db9d525d8623e80c04e33c4463450285791124381bc545bb85e5e8925a776') // m/84'/0'/0'/0/0
+      expect(accounts[1]).eq('020935f353d66e1e0af2972fa7332b98c1eda1b8a4399f84a59122ec292dbc5ccb') // m/84'/0'/1'/0/0
+      expect(accounts[2]).eq('024ca05656e3d319971b26925f26faeb460f4345fd75868a7fe2bd780c8ea25564') // m/84'/0'/2'/0/0
+    })
+
+    it('getAccountByHdPath uses account-index derivation', async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0],
+        hdPath: "m/84'/0'/0'/0",
+        accountIndexDerivation: true,
+      })
+
+      // account index 2 → m/84'/0'/2'/0/0
+      const account = keyring.getAccountByHdPath("m/84'/0'/0'/0", 2)
+      expect(account).eq('024ca05656e3d319971b26925f26faeb460f4345fd75868a7fe2bd780c8ea25564')
+    })
+
+    it('serialize and deserialize preserves accountIndexDerivation', async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0, 1],
+        hdPath: "m/86'/0'/0'/0",
+        accountIndexDerivation: true,
+      })
+
+      const serialized = await keyring.serialize()
+      expect(serialized.accountIndexDerivation).toBe(true)
+
+      const restored = new HdKeyring(serialized)
+      const accounts = await restored.getAccounts()
+      expect(accounts[0]).eq('02ed399b9a6d5c2bc47371bf8eafd59f2a02e81d24850013cbb2eb621bf183d748')
+      expect(accounts[1]).eq('0215460951216224652a468a59634428747807e402c738d8dc71349b2a4d9f94b9')
+    })
+
+    it('standard derivation is unaffected (accountIndexDerivation defaults to false)', async () => {
+      // m/84'/0'/0'/0/{i} — address index varies, same as existing behaviour
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0, 1],
+        hdPath: "m/84'/0'/0'/0",
+      })
+
+      const accounts = await keyring.getAccounts()
+      expect(accounts[0]).eq('02d16db9d525d8623e80c04e33c4463450285791124381bc545bb85e5e8925a776') // m/84'/0'/0'/0/0
+      expect(accounts[1]).eq('023f0b3115a6c5a51ec62d8cbe6e834e79fe4bf22555e095a163e0e451a6fdc4d5') // m/84'/0'/0'/0/1
+    })
+  })
+
   describe('support xpriv', () => {
     it('xpriv', async () => {
       const sampleXpriv =

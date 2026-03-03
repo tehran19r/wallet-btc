@@ -6,6 +6,7 @@ import { colors } from '@/ui/theme/colors';
 import { copyToClipboard, shortAddress } from '@/ui/utils';
 import { CopyOutlined, EditOutlined, EllipsisOutlined, KeyOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import { KeyringType } from '@unisat/keyring-service/types';
+import { Account, KEYRING_CLASS, getAccountDerivationPath } from '@unisat/wallet-shared';
 import {
   accountActions,
   useAppDispatch,
@@ -17,7 +18,6 @@ import {
   useWallet
 } from '@unisat/wallet-state';
 
-import { Account, KEYRING_CLASS } from '@unisat/wallet-shared';
 import { useNavigate } from '../MainRoute';
 
 export interface ItemData {
@@ -45,7 +45,7 @@ export function MyItem({ account, autoNav }: MyItemProps, ref) {
   const [optionsVisible, setOptionsVisible] = useState(false);
   let path = '';
   if (keyring.type !== KEYRING_CLASS.PRIVATE_KEY) {
-    path = ` (${keyring.hdPath + '/' + account.index})`;
+    path = ` (${getAccountDerivationPath(keyring.hdPath, account.index ?? 0, keyring.accountIndexDerivation)})`;
   }
 
   const tools = useTools();
@@ -132,6 +132,15 @@ export function MyItem({ account, autoNav }: MyItemProps, ref) {
               }}>
               <CopyOutlined />
               <Text text={t('copy_address')} size="sm" />
+            </Row>
+            <Row
+              onClick={() => {
+                copyToClipboard(account.pubkey);
+                tools.toastSuccess(t('copied'));
+                setOptionsVisible(false);
+              }}>
+              <CopyOutlined />
+              <Text text={t('copy_publickey')} size="sm" />
             </Row>
             {account.type !== KeyringType.KeystoneKeyring && account.type !== KeyringType.ColdWalletKeyring && (
               <Row

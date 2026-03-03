@@ -13,6 +13,11 @@ import { AddressType, ChainType, NetworkType } from '@unisat/wallet-types'
 import { RestoreWalletType } from '../types'
 import { SupportedLocale } from '../types/i18n'
 
+export enum WordsType {
+  WORDS_12,
+  WORDS_24,
+}
+
 export const ADDRESS_TYPES: {
   value: AddressType
   label: string
@@ -180,57 +185,6 @@ export const LANGS = [
 ]
 
 export const OW_HD_PATH = "m/86'/0'/0'"
-
-export const getRestoreWallets = (): {
-  value: RestoreWalletType
-  name: string
-  addressTypes: AddressType[]
-}[] => [
-  {
-    value: RestoreWalletType.UNISAT,
-    name: 'UniSat Wallet',
-    addressTypes: [
-      AddressType.P2WPKH,
-      AddressType.P2SH_P2WPKH,
-      AddressType.P2TR,
-      AddressType.P2PKH,
-      AddressType.M44_P2WPKH,
-      AddressType.M44_P2TR,
-    ],
-  },
-  {
-    value: RestoreWalletType.SPARROW,
-    name: 'Sparrow Wallet',
-    addressTypes: [
-      AddressType.P2PKH,
-      AddressType.P2WPKH,
-      AddressType.P2SH_P2WPKH,
-      AddressType.P2TR,
-    ],
-  },
-  {
-    value: RestoreWalletType.XVERSE,
-    name: 'Xverse Wallet',
-    addressTypes: [AddressType.P2SH_P2WPKH, AddressType.P2TR],
-  },
-  {
-    value: RestoreWalletType.OW,
-    name: 'Ordinals Wallet',
-    addressTypes: [AddressType.P2TR],
-  },
-  {
-    value: RestoreWalletType.OTHERS,
-    name: 'other_wallet',
-    addressTypes: [
-      AddressType.P2PKH,
-      AddressType.P2WPKH,
-      AddressType.P2SH_P2WPKH,
-      AddressType.P2TR,
-      AddressType.M44_P2WPKH,
-      AddressType.M44_P2TR,
-    ],
-  },
-]
 
 export const NETWORK_TYPES = [
   {
@@ -660,6 +614,7 @@ export const RESTORE_WALLETS: {
   value: RestoreWalletType
   name: string
   addressTypes: AddressType[]
+  wordsTypes: WordsType[]
 }[] = [
   {
     value: RestoreWalletType.UNISAT,
@@ -672,6 +627,19 @@ export const RESTORE_WALLETS: {
       AddressType.M44_P2WPKH,
       AddressType.M44_P2TR,
     ],
+    wordsTypes: [WordsType.WORDS_12, WordsType.WORDS_24],
+  },
+  {
+    value: RestoreWalletType.MAGIC_EDEN,
+    name: 'Magic Eden Wallet',
+    addressTypes: [AddressType.P2WPKH, AddressType.P2TR],
+    wordsTypes: [WordsType.WORDS_12, WordsType.WORDS_24],
+  },
+  {
+    value: RestoreWalletType.XVERSE,
+    name: 'Xverse Wallet',
+    addressTypes: [AddressType.P2SH_P2WPKH, AddressType.P2TR],
+    wordsTypes: [WordsType.WORDS_12],
   },
   {
     value: RestoreWalletType.SPARROW,
@@ -682,16 +650,14 @@ export const RESTORE_WALLETS: {
       AddressType.P2SH_P2WPKH,
       AddressType.P2TR,
     ],
+    wordsTypes: [WordsType.WORDS_12, WordsType.WORDS_24],
   },
-  {
-    value: RestoreWalletType.XVERSE,
-    name: 'Xverse Wallet',
-    addressTypes: [AddressType.P2SH_P2WPKH, AddressType.P2TR],
-  },
+
   {
     value: RestoreWalletType.OW,
     name: 'Ordinals Wallet',
     addressTypes: [AddressType.P2TR],
+    wordsTypes: [WordsType.WORDS_12],
   },
   {
     value: RestoreWalletType.OTHERS,
@@ -704,6 +670,7 @@ export const RESTORE_WALLETS: {
       AddressType.M44_P2WPKH,
       AddressType.M44_P2TR,
     ],
+    wordsTypes: [WordsType.WORDS_12, WordsType.WORDS_24],
   },
 ]
 

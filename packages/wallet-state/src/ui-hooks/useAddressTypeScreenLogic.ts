@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { numUtils } from '@unisat/base-utils'
 import { ADDRESS_TYPES, KeyringType } from '@unisat/keyring-service/types'
+import { getAccountDerivationPath } from '@unisat/wallet-shared'
 import { AddressType } from '@unisat/wallet-types'
 import {
   useAppDispatch,
@@ -86,6 +87,10 @@ export function useAddressTypeScreenLogic() {
         if (v.displayIndex < 0) {
           return false
         }
+        // MagicEden only supports P2WPKH and P2TR
+        if (currentKeyring.accountIndexDerivation) {
+          return v.value === AddressType.P2WPKH || v.value === AddressType.P2TR
+        }
         const address = addresses[v.value]
         const balance = addressAssets[address]
         if (v.isUnisatLegacy) {
@@ -110,11 +115,12 @@ export function useAddressTypeScreenLogic() {
         satoshis: 0,
         total_inscription: 0,
       }
-      let name = `${v.name} (${v.hdPath}/${account.index})`
+      const derivedPath = getAccountDerivationPath(v.hdPath, account.index || 0, currentKeyring.accountIndexDerivation)
+      let name = `${v.name} (${derivedPath})`
       if (currentKeyring.type === KeyringType.SimpleKeyring) {
         name = `${v.name}`
       } else if (currentKeyring.type === KeyringType.ColdWalletKeyring) {
-        name = `❄️ ${v.name} (${v.hdPath}/${account.index}) - ${t('Fixed by cold wallet')}`
+        name = `❄️ ${v.name} (${derivedPath}) - ${t('Fixed by cold wallet')}`
       }
 
       return {

@@ -358,14 +358,16 @@ export class WalletController extends BaseController {
     hdPath: string,
     passphrase: string,
     addressType: AddressType,
-    accountCount: number
+    accountCount: number,
+    accountIndexDerivation = false
   ) => {
     const originKeyring = await keyringService.createKeyringWithMnemonics(
       mnemonic,
       hdPath,
       passphrase,
       addressType,
-      accountCount
+      accountCount,
+      accountIndexDerivation
     )
     keyringService.removePreMnemonics()
 
@@ -387,7 +389,8 @@ export class WalletController extends BaseController {
     hdPath: string,
     passphrase: string,
     addressType: AddressType,
-    accountCount = 1
+    accountCount = 1,
+    accountIndexDerivation = false
   ) => {
     const activeIndexes: number[] = []
     for (let i = 0; i < accountCount; i++) {
@@ -398,6 +401,7 @@ export class WalletController extends BaseController {
       activeIndexes,
       hdPath,
       passphrase,
+      accountIndexDerivation,
     })
     const displayedKeyring = await keyringService.displayForKeyring(originKeyring, addressType, -1)
     return this.displayedKeyringToWalletKeyring(displayedKeyring, -1, false)
@@ -438,7 +442,8 @@ export class WalletController extends BaseController {
     hdPath: string,
     passphrase: string,
     addressType: AddressType,
-    accountCount = 1
+    accountCount = 1,
+    accountIndexDerivation = false
   ) => {
     const activeIndexes: number[] = []
     for (let i = 0; i < accountCount; i++) {
@@ -449,6 +454,7 @@ export class WalletController extends BaseController {
       activeIndexes,
       hdPath,
       passphrase,
+      accountIndexDerivation,
     })
     const displayedKeyring = await keyringService.displayForKeyring(originKeyring, addressType, -1)
     return this.displayedKeyringToWalletKeyring(displayedKeyring, -1, false)
@@ -1618,6 +1624,8 @@ export class WalletController extends BaseController {
       type === KeyringType.HdKeyring || type === KeyringType.KeystoneKeyring
         ? displayedKeyring.keyring.hdPath
         : ''
+    const accountIndexDerivation: boolean =
+      type === KeyringType.HdKeyring ? (displayedKeyring.keyring.accountIndexDerivation ?? false) : false
     const alianName = preferenceService.getKeyringAlianName(
       key,
       initName ? `${KEYRING_TYPES[type]!.alianName} #${index + 1}` : ''
@@ -1630,6 +1638,7 @@ export class WalletController extends BaseController {
       accounts,
       alianName,
       hdPath,
+      accountIndexDerivation,
     }
     return keyring
   }

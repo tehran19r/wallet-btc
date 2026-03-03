@@ -157,7 +157,8 @@ export interface WalletController {
     hdPath: string,
     passphrase: string,
     addressType: AddressType,
-    accountCount: number
+    accountCount: number,
+    accountIndexDerivation?: boolean
   ): Promise<{ address: string; type: string }[]>
   createKeyringWithKeystone(
     urType: string,
@@ -200,7 +201,8 @@ export interface WalletController {
     hdPath: string,
     passphrase: string,
     addressType: AddressType,
-    accountCount?: number
+    accountCount?: number,
+    accountIndexDerivation?: boolean
   ): Promise<WalletKeyring>
 
   createTmpKeyringWithMnemonics2(
@@ -215,7 +217,8 @@ export interface WalletController {
     hdPath: string,
     passphrase: string,
     addressType: AddressType,
-    accountCount: number
+    accountCount: number,
+    accountIndexDerivation?: boolean
   ): Promise<WalletKeyring>
 
   removeKeyring(keyring: WalletKeyring): Promise<WalletKeyring>
