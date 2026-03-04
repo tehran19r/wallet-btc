@@ -63,3 +63,5 @@ export interface Keyring {
   }): Promise<{ type: string; cbor: string; requestId: string }>
   parseSignCosmosUr?(type: string, cbor: string): Promise<any>
 }
+
+export type KeyringClass = (new (opts?: unknown) => Keyring) & { type: string }

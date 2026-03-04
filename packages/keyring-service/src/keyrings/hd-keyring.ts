@@ -3,6 +3,7 @@ import * as bip39 from 'bip39'
 import bitcore from 'bitcore-lib'
 //@ts-ignore
 import * as hdkey from 'hdkey'
+
 import { ECPairInterface, bitcoin, eccManager } from '@unisat/wallet-bitcoin'
 import { SimpleKeyring } from './simple-keyring'
 
@@ -26,6 +27,7 @@ export class HdKeyring extends SimpleKeyring {
   passphrase: string = ''
   override network: bitcoin.Network = bitcoin.networks.bitcoin
 
+  // m / purpose' / coin_type' / account' / change / address_index
   hdPath = hdPathString
   root: bitcore.HDPrivateKey = null
   hdWallet?: any

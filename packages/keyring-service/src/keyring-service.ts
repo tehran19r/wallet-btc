@@ -17,6 +17,7 @@ import {
   DisplayedKeyring,
   Encryptor,
   Keyring,
+  KeyringClass,
   KeyringServiceConfig,
   KeyringType,
   MemStoreState,
@@ -103,7 +104,7 @@ export class KeyringService extends EventEmitter {
   private eventBus: any
 
   // Core state - aligned with unisat-extension
-  public keyringTypes: any[] = []
+  public keyringTypes: KeyringClass[] = []
   public store!: ObservableStore<StoreState>
   public memStore: ObservableStore<MemStoreState> = undefined as any
   public keyrings: Keyring[] = []
@@ -194,7 +195,7 @@ export class KeyringService extends EventEmitter {
     }
 
     // Initialize supported keyring types
-    this.keyringTypes = Object.values(KEYRING_SDK_TYPES)
+    this.keyringTypes = Object.values(KEYRING_SDK_TYPES) as KeyringClass[]
 
     // Initialize memory store - aligned with unisat-extension
     this.memStore = new ObservableStore<MemStoreState>({
@@ -632,8 +633,11 @@ export class KeyringService extends EventEmitter {
     opts: unknown,
     addressType: AddressType
   ): Promise<Keyring> => {
-    const Keyring = this.getKeyringClassForType(type)
-    const keyring = new Keyring(opts)
+    const KeyringCtor = this.getKeyringClassForType(type)
+    if (!KeyringCtor) {
+      throw new Error(`Unknown keyring type: ${type}`)
+    }
+    const keyring = new KeyringCtor(opts)
     return await this.addKeyring(keyring, addressType)
   }
 
@@ -924,7 +928,7 @@ export class KeyringService extends EventEmitter {
    * @param {string} type - The type whose class to get.
    * @returns {Keyring|undefined} The class, if it exists.
    */
-  getKeyringClassForType = (type: string) => {
+  getKeyringClassForType = (type: string): KeyringClass | undefined => {
     return this.keyringTypes.find(kr => kr.type === type)
   }
 
