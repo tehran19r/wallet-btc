@@ -23,8 +23,9 @@ export function Step2({
   const tools = useTools();
   const { t } = useI18n();
 
+  const restoreWallet = RESTORE_WALLETS[contextData.restoreWalletType];
+
   const hdPathOptions = useMemo(() => {
-    const restoreWallet = RESTORE_WALLETS[contextData.restoreWalletType];
     return ADDRESS_TYPES.filter((v) => {
       if (v.displayIndex < 0) {
         return false;
@@ -219,7 +220,14 @@ export function Step2({
       } else {
         const option = hdPathOptions[contextData.addressTypeIndex];
         const hdPath = contextData.customHdPath || option.hdPath;
-        await createAccount(contextData.mnemonics, hdPath, contextData.passphrase, contextData.addressType, 1, isMagicEden);
+        await createAccount(
+          contextData.mnemonics,
+          hdPath,
+          contextData.passphrase,
+          contextData.addressType,
+          1,
+          isMagicEden
+        );
       }
       navigate('MainScreen');
     } catch (e) {
@@ -356,33 +364,40 @@ export function Step2({
           );
         })}
 
-      <Text text={t('custom_hdpath_optional')} preset="bold" mt="lg" />
+      {restoreWallet.customPathSupport && (
+        <Column mt="lg">
+          <Text text={t('custom_hdpath_optional')} preset="bold" />
+          <Column>
+            <Input
+              placeholder={t('custom_hdpath')}
+              value={pathText}
+              onChange={(e) => {
+                submitCustomHdPath(e.target.value);
+              }}
+              data-testid="custom-hdpath-input"
+            />
+          </Column>
+          {pathError && <Text text={pathError} color="error" />}
+        </Column>
+      )}
 
-      <Column>
-        <Input
-          placeholder={t('custom_hdpath')}
-          value={pathText}
-          onChange={(e) => {
-            submitCustomHdPath(e.target.value);
-          }}
-          data-testid="custom-hdpath-input"
-        />
-      </Column>
-      {pathError && <Text text={pathError} color="error" />}
       {error && <Text text={error} color="error" />}
 
-      <Text text={t('phrase_optional')} preset="bold" mt="lg" />
-
-      <Input
-        placeholder={t('passphrase')}
-        defaultValue={contextData.passphrase}
-        onChange={async (e) => {
-          updateContextData({
-            passphrase: e.target.value
-          });
-        }}
-        data-testid="passphrase-input"
-      />
+      {restoreWallet.phraseSupport && (
+        <Column mt="lg">
+          <Text text={t('phrase_optional')} preset="bold" />
+          <Input
+            placeholder={t('passphrase')}
+            defaultValue={contextData.passphrase}
+            onChange={async (e) => {
+              updateContextData({
+                passphrase: e.target.value
+              });
+            }}
+            data-testid="passphrase-input"
+          />
+        </Column>
+      )}
 
       <FooterButtonContainer>
         <Button

@@ -7,16 +7,11 @@ import { Step0 } from '@/ui/pages/Account/createHDWalletComponents/Step0';
 import { Step1_Create } from '@/ui/pages/Account/createHDWalletComponents/Step1_Create';
 import { Step1_Import } from '@/ui/pages/Account/createHDWalletComponents/Step1_Import';
 import { Step2 } from '@/ui/pages/Account/createHDWalletComponents/Step2';
-import {
-  ContextData,
-  TabType,
-  UpdateContextDataParams,
-  WordsType
-} from '@/ui/pages/Account/createHDWalletComponents/types';
-import { RestoreWalletType } from '@unisat/wallet-shared';
+import { ContextData, TabType, UpdateContextDataParams } from '@/ui/pages/Account/createHDWalletComponents/types';
+import { RestoreWalletType, WordsType } from '@unisat/wallet-shared';
 import { useI18n, useWallet } from '@unisat/wallet-state';
-
 import { AddressType } from '@unisat/wallet-types';
+
 import { useNavigate } from '../MainRoute';
 
 export default function CreateHDWalletScreen() {
