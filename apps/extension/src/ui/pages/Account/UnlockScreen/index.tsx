@@ -5,9 +5,9 @@ import { Button } from '@/ui/components/Button';
 import { Input } from '@/ui/components/Input';
 import { Logo } from '@/ui/components/Logo';
 import { Text } from '@/ui/components/Text';
+import { getUiType } from '@/ui/web';
 import { useI18n, useIsUnlocked, useTools, useUnlockCallback, useWallet } from '@unisat/wallet-state';
 
-import { getUiType } from '@/ui/web';
 import { useNavigate } from '../../MainRoute';
 
 export default function UnlockScreen() {
@@ -87,7 +87,13 @@ export default function UnlockScreen() {
               autoFocus={true}
               data-testid="unlock-password-input"
             />
-            <Button disabled={disabled} text={t('unlock')} preset="primary" onClick={btnClick} data-testid="unlock-button" />
+            <Button
+              disabled={disabled}
+              text={t('unlock')}
+              preset="primary"
+              onClick={btnClick}
+              data-testid="unlock-button"
+            />
           </Column>
         </Column>
       </Content>

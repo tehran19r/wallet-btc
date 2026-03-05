@@ -15,7 +15,7 @@ import logger from 'loglevel'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useApproval, useI18n, useTools, useWallet } from 'src/context'
 import { useCurrentAccount } from 'src/hooks'
-import { shortAddress, useAsyncEffect } from 'src/utils/ui-utils'
+import { useAsyncEffect } from 'src/utils/ui-utils'
 
 interface InscriptionInfo {
   id: string
@@ -83,6 +83,7 @@ export function useSignPsbtLogic(props: SignPsbtProps) {
   const { resolveApproval, rejectApproval } = useApproval()
 
   const [loading, setLoading] = useState(false)
+  const [isPsbtSigning, setIsPsbtSigning] = useState(false)
   const [isPsbtRiskPopoverVisible, setIsPsbtRiskPopoverVisible] = useState(false)
   const [isKeystoneSigning, setIsKeystoneSigning] = useState(false)
   const [isColdWalletSigning, setIsColdWalletSigning] = useState(false)
@@ -316,32 +317,42 @@ export function useSignPsbtLogic(props: SignPsbtProps) {
 
   const onQuickMultiSign = async () => {
     // Run analysis if not yet done (user clicked before async summary completed)
-    const summary = localPsbtSummary ?? (await wallet.analyzeLocalPsbts(toSignDatas))
-    if (!localPsbtSummary) setLocalPsbtSummary(summary)
 
-    if (summary.parseErrorCount > 0) {
-      tools.toastError(t('failed_to_parse_psbt'))
-      return
-    }
-    if (summary.hasSighashNone) {
-      tools.toastError(t('sighash_none_detected'))
-      return
-    }
-    if (summary.hasAssets) {
-      tools.toastError(t('quick_sign_assets_detected'))
-      return
-    }
+    try {
+      setIsPsbtSigning(true)
+      // Yield to the JS event loop so the loading UI can render before heavy signing work begins
+      await new Promise<void>(resolve => setTimeout(resolve, 50))
+      const summary = localPsbtSummary ?? (await wallet.analyzeLocalPsbts(toSignDatas))
+      if (!localPsbtSummary) setLocalPsbtSummary(summary)
 
-    for (let i = 0; i < toSignDatas.length; i++) {
-      try {
-        const toSignData = toSignDatas[i]
-        const signedData = await wallet.signPsbtV2(toSignData)
-        onSignedData(signedData, i)
-      } catch (e) {
-        signedStates[i] = SignState.FAILED
-        setSignedStates([...signedStates])
-        logger.error(`Signing failed for PSBT ${i}:`, e)
+      if (summary.parseErrorCount > 0) {
+        tools.toastError(t('failed_to_parse_psbt'))
+        return
       }
+      if (summary.hasSighashNone) {
+        tools.toastError(t('sighash_none_detected'))
+        return
+      }
+      if (summary.hasAssets) {
+        tools.toastError(t('quick_sign_assets_detected'))
+        return
+      }
+
+      for (let i = 0; i < toSignDatas.length; i++) {
+        try {
+          const toSignData = toSignDatas[i]
+          const signedData = await wallet.signPsbtV2(toSignData)
+          onSignedData(signedData, i)
+        } catch (e) {
+          signedStates[i] = SignState.FAILED
+          setSignedStates([...signedStates])
+          tools.toastError(`Signing failed for PSBT ${i}: ${e.message}`)
+        }
+      }
+    } catch (e) {
+    } finally {
+      setIsPsbtSigning(false)
+      setDisclaimerVisible(false)
     }
   }
 
@@ -455,6 +466,7 @@ export function useSignPsbtLogic(props: SignPsbtProps) {
     brc20PriceMap,
     runesPriceMap,
     session,
+    isPsbtSigning,
 
     // page state
     isKeystoneSigning,

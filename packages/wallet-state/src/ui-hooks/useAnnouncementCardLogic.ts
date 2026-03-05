@@ -1,5 +1,5 @@
 import { Announcement, AnnouncementLinkType } from '@unisat/wallet-shared'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStorage, useWallet } from 'src/context'
 
 const AUTO_PLAY_INTERVAL = 5000
@@ -41,12 +41,16 @@ export function useAnnouncementCardLogic() {
     setDismissedIds(saved)
   }
 
-  const validAnnouncements = announcements.filter(a => {
-    const now = Date.now()
-    return now >= a.startTime && now <= a.endTime && !dismissedIds.includes(a.id)
-  })
+  const validAnnouncements = useMemo(
+    () =>
+      announcements.filter(a => {
+        const now = Date.now()
+        return now >= a.startTime && now <= a.endTime && !dismissedIds.includes(a.id)
+      }),
+    [announcements, dismissedIds],
+  )
 
-  // Auto-play carousel
+  // Auto-play: hook is the single timing authority
   useEffect(() => {
     if (validAnnouncements.length <= 1) return undefined
     timerRef.current = setInterval(() => {
