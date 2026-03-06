@@ -133,7 +133,7 @@ export function MyItem({ account, autoNav }: MyItemProps, ref) {
               <CopyOutlined />
               <Text text={t('copy_address')} size="sm" />
             </Row>
-            <Row
+            {/* <Row
               onClick={() => {
                 copyToClipboard(account.pubkey);
                 tools.toastSuccess(t('copied'));
@@ -141,7 +141,7 @@ export function MyItem({ account, autoNav }: MyItemProps, ref) {
               }}>
               <CopyOutlined />
               <Text text={t('copy_publickey')} size="sm" />
-            </Row>
+            </Row> */}
             {account.type !== KeyringType.KeystoneKeyring && account.type !== KeyringType.ColdWalletKeyring && (
               <Row
                 onClick={() => {
