@@ -1,5 +1,6 @@
 import { bitcoin, verifyMessageOfBIP322Simple } from '@unisat/wallet-bitcoin'
 import {
+  RequestMethodDeriveContextHashParams,
   RequestMethodGetInscriptionsParams,
   RequestMethodSendBitcoinParams,
   RequestMethodSendInscriptionParams,
@@ -535,6 +536,34 @@ class ProviderController extends BaseController {
 
     const respone = encodeSignature(approvalRes.publicKey, approvalRes.signature)
     return respone
+  }
+  @Reflect.metadata('APPROVAL', [
+    'DeriveContextHash',
+    async req => {
+      const params: RequestMethodDeriveContextHashParams = req.data.params
+      if (!params.context) {
+        throw new Error('context is required')
+      }
+      if (typeof params.context !== 'string') {
+        throw new Error('context must be a string')
+      }
+      if (params.context.length === 0) {
+        throw new Error('context must be non-empty')
+      }
+      if (params.context.length % 2 !== 0) {
+        throw new Error('context must be an even-length hex string')
+      }
+      if (!/^[0-9a-fA-F]+$/.test(params.context)) {
+        throw new Error('context must be a valid hex string')
+      }
+    },
+  ])
+  deriveContextHash = async ({
+    data: {
+      params: { context },
+    },
+  }) => {
+    return await wallet.deriveContextHash(context)
   }
 }
 

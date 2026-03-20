@@ -1967,6 +1967,18 @@
   "sign_and_pay": {
     "message": "Signer & Payer"
   },
+  "derive_context_hash_request": {
+    "message": "Générer un identifiant"
+  },
+  "derive_context_hash_description": {
+    "message": "Ce site demande un identifiant unique lié à votre portefeuille pour le contexte suivant."
+  },
+  "derive_context_hash_context": {
+    "message": "Contexte"
+  },
+  "derive_context_hash_warning": {
+    "message": "N'approuvez que si vous faites confiance à ce site."
+  },
   "sign_data_request": {
     "message": "Demande de signature de données"
   },

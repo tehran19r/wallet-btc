@@ -1991,6 +1991,18 @@
   "sign_and_pay": {
     "message": "Sign & Pay"
   },
+  "derive_context_hash_request": {
+    "message": "Generate Identifier"
+  },
+  "derive_context_hash_description": {
+    "message": "This site is requesting a unique identifier tied to your wallet for the following context."
+  },
+  "derive_context_hash_context": {
+    "message": "Context"
+  },
+  "derive_context_hash_warning": {
+    "message": "Only approve if you trust this site."
+  },
   "sign_data_request": {
     "message": "Sign Data request"
   },

@@ -7,6 +7,7 @@ import {
   validator,
 } from '@unisat/wallet-bitcoin'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { deriveContextHash, parseHexContext } from '../src/keyrings/derive-context-hash'
 import { SimpleKeyring } from '../src/keyrings/simple-keyring'
 
 const TYPE_STR = 'Simple Key Pair'
@@ -357,6 +358,53 @@ describe('bitcoin-simple-keyring', () => {
         }
       )
       expect(psbt.validateSignaturesOfAllInputs(validator)).to.be.true
+    })
+  })
+
+  describe('#deriveContextHash', () => {
+    it('derives a 64-char hex value', async () => {
+      const newKeyring = new SimpleKeyring([testAccount.key])
+      const result = await newKeyring.deriveContextHash(testAccount.address, 'deadbeef')
+      expect(result).toHaveLength(64)
+      expect(result).toMatch(/^[0-9a-f]{64}$/)
+    })
+
+    it('produces same result as direct derivation', async () => {
+      const newKeyring = new SimpleKeyring([testAccount.key])
+      const result = await newKeyring.deriveContextHash(testAccount.address, 'deadbeef')
+      const privKeyBytes = new Uint8Array(Buffer.from(testAccount.key, 'hex'))
+      const directResult = deriveContextHash(privKeyBytes, parseHexContext('deadbeef'))
+      expect(result).toBe(directResult)
+    })
+
+    it('known-answer test', async () => {
+      const newKeyring = new SimpleKeyring([testAccount.key])
+      const result = await newKeyring.deriveContextHash(testAccount.address, 'deadbeef')
+      expect(result).toBe('8f2064889f825ec2797ed764668b36998eebe22e682255b425edda0c2f6ed7f9')
+    })
+
+    it('different accounts produce different results', async () => {
+      const newKeyring = new SimpleKeyring()
+      await newKeyring.addAccounts(2)
+      const accounts = await newKeyring.getAccounts()
+      const result0 = await newKeyring.deriveContextHash(accounts[0], 'deadbeef')
+      const result1 = await newKeyring.deriveContextHash(accounts[1], 'deadbeef')
+      expect(result0).not.toBe(result1)
+    })
+
+    it('throws for unknown public key', async () => {
+      const newKeyring = new SimpleKeyring([testAccount.key])
+      const fakePubkey = '000000000000000000000000000000000000000000000000000000000000000000'
+      await expect(newKeyring.deriveContextHash(fakePubkey, 'deadbeef')).rejects.toThrow(
+        'Unable to find matching publicKey'
+      )
+    })
+
+    it('rejects invalid hex context', async () => {
+      const newKeyring = new SimpleKeyring([testAccount.key])
+      await expect(newKeyring.deriveContextHash(testAccount.address, 'xyz')).rejects.toThrow()
+      await expect(newKeyring.deriveContextHash(testAccount.address, '')).rejects.toThrow()
+      await expect(newKeyring.deriveContextHash(testAccount.address, 'abc')).rejects.toThrow()
     })
   })
 })

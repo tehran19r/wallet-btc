@@ -94,3 +94,7 @@ export interface RequestMethodGetAvailableUtxosParams {
   cursor: number
   size: number
 }
+
+export interface RequestMethodDeriveContextHashParams {
+  context: string
+}

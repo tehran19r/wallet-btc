@@ -133,6 +133,10 @@ Main service class for managing keyrings.
 - `signMessage(address: string, keyringType: string, message: string): Promise<string>` - Sign message
 - `verifyMessage(address: string, message: string, signature: string): Promise<boolean>` - Verify message
 
+##### Key Derivation
+
+- `deriveContextHash(publicKey: string, context: string): Promise<string>` - Derive a deterministic 32-byte value from the wallet's key material and a hex-encoded context string using HKDF-SHA-256 (RFC 5869). Supported by all keyring types: HD (mnemonic), HD (xpriv), and imported private keys.
+
 ### Types
 
 ```typescript

@@ -10,6 +10,7 @@ import { isTaprootInput } from 'bitcoinjs-lib/src/psbt/bip371.js'
 import { decode } from 'bs58check'
 import { EventEmitter } from 'events'
 import { ToSignInput } from '../types'
+import { deriveContextHash, parseHexContext } from './derive-context-hash'
 
 const type = 'Simple Key Pair'
 
@@ -125,6 +126,20 @@ export class SimpleKeyring extends EventEmitter {
     }
 
     this.wallets = this.wallets.filter(wallet => wallet.publicKey.toString('hex') !== publicKey)
+  }
+
+  async deriveContextHash(publicKey: string, context: string): Promise<string> {
+    const wallet = this._getWalletForAccount(publicKey)
+    if (!wallet.privateKey) {
+      throw new Error('deriveContextHash requires access to the private key')
+    }
+    const contextBytes = parseHexContext(context)
+    const privKeyBytes = new Uint8Array(wallet.privateKey)
+    try {
+      return deriveContextHash(privKeyBytes, contextBytes)
+    } finally {
+      privKeyBytes.fill(0)
+    }
   }
 
   private _getWalletForAccount(publicKey: string) {

@@ -40,6 +40,9 @@ export type ProviderMethodList = {
     signerAddress: string
     data: string
   }
+  deriveContextHash: {
+    context: string
+  }
 }
 
 export type ProviderMethods = keyof ProviderMethodList

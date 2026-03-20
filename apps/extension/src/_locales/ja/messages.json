@@ -1967,6 +1967,18 @@
   "sign_and_pay": {
     "message": "署名して支払う"
   },
+  "derive_context_hash_request": {
+    "message": "識別子を生成"
+  },
+  "derive_context_hash_description": {
+    "message": "このサイトは、以下のコンテキストに対してウォレットに紐づく一意の識別子を要求しています。"
+  },
+  "derive_context_hash_context": {
+    "message": "コンテキスト"
+  },
+  "derive_context_hash_warning": {
+    "message": "このサイトを信頼できる場合のみ承認してください。"
+  },
   "sign_data_request": {
     "message": "データ署名リクエスト"
   },

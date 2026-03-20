@@ -1,5 +1,6 @@
 export { default as Connect } from './Connect';
 export { default as CosmosConnect } from './CosmosConnect';
+export { default as DeriveContextHash } from './DeriveContextHash';
 export { default as CosmosSign } from './CosmosSign';
 export { default as InscribeTransfer } from './InscribeTransfer';
 export { default as SignData } from './SignData';

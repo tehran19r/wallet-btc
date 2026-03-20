@@ -18,6 +18,7 @@ The `window.unisat` object is injected by the UniSat Wallet extension into every
 | [Address Types](./address-types.md) | Supported address formats |
 | [Manage Assets](./manage-assets.md) | Send BTC, inscriptions, Runes, BRC-20 |
 | [Manage Networks](./manage-networks.md) | Switch networks, listen for changes |
+| [Derive Context Hash](./derive-context-hash.md) | Deterministic secret derivation from wallet seed |
 | [Sign Message](./sign-message.md) | BIP-322 and ECDSA message signing |
 | [Sign Transaction](./sign-transaction.md) | PSBT signing and transaction broadcasting |
 | [Mobile Integration](./mobile-integration.md) | Deep-link integration for mobile dApps |

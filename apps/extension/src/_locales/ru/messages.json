@@ -1967,6 +1967,18 @@
   "sign_and_pay": {
     "message": "Подписать и оплатить"
   },
+  "derive_context_hash_request": {
+    "message": "Сгенерировать идентификатор"
+  },
+  "derive_context_hash_description": {
+    "message": "Этот сайт запрашивает уникальный идентификатор, привязанный к вашему кошельку, для следующего контекста."
+  },
+  "derive_context_hash_context": {
+    "message": "Контекст"
+  },
+  "derive_context_hash_warning": {
+    "message": "Одобряйте только если вы доверяете этому сайту."
+  },
   "sign_data_request": {
     "message": "Запрос подписи данных"
   },

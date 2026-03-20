@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { deriveContextHash, parseHexContext } from '../src/keyrings/derive-context-hash'
 import { HdKeyring } from '../src/keyrings/hd-keyring'
 const sampleMnemonic =
   'finish oppose decorate face calm tragic certain desk hour urge dinosaur mango'
@@ -281,6 +282,115 @@ describe('bitcoin-hd-keyring', () => {
       const accounts = await keyring.getAccounts()
       expect(accounts[0]).eq('02d16db9d525d8623e80c04e33c4463450285791124381bc545bb85e5e8925a776') // m/84'/0'/0'/0/0
       expect(accounts[1]).eq('023f0b3115a6c5a51ec62d8cbe6e834e79fe4bf22555e095a163e0e451a6fdc4d5') // m/84'/0'/0'/0/1
+    })
+  })
+
+  describe('deriveContextHash', () => {
+    it('derives context hash with mnemonic-based keyring', async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0],
+      })
+      const accounts = await keyring.getAccounts()
+      const result = await keyring.deriveContextHash(accounts[0], 'deadbeef')
+      expect(result).toHaveLength(64)
+      expect(result).toMatch(/^[0-9a-f]{64}$/)
+    })
+
+    it('produces same result as direct derivation', async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0],
+      })
+      const accounts = await keyring.getAccounts()
+      const contextHex = 'deadbeef'
+      const keyringResult = await keyring.deriveContextHash(accounts[0], contextHex)
+
+      const bip39 = await import('bip39')
+      const seedBuf = bip39.mnemonicToSeedSync(sampleMnemonic)
+      const seed = new Uint8Array(seedBuf.buffer, seedBuf.byteOffset, seedBuf.byteLength)
+      const directResult = deriveContextHash(seed, parseHexContext(contextHex))
+      expect(keyringResult).toBe(directResult)
+    })
+
+    it('mnemonic keyring produces same result regardless of which account pubkey is passed', async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0, 1],
+      })
+      const accounts = await keyring.getAccounts()
+      const result0 = await keyring.deriveContextHash(accounts[0], 'deadbeef')
+      const result1 = await keyring.deriveContextHash(accounts[1], 'deadbeef')
+      // HD keyring derives from the root seed, not individual account keys
+      expect(result0).toBe(result1)
+    })
+
+    it('xpriv-only keyring uses root private key', async () => {
+      const sampleXpriv =
+        'xprvA2JBuYsdqVhrC2wGmb9QhBejk9gXXYgM3Jg9xgVYmDMsakDoURc8V7UYos1pP1kev1tG51PPA9A8VMYYCLov1L5c3J7npraxwjeJCquGhDi'
+      const keyring = new HdKeyring({
+        xpriv: sampleXpriv,
+        activeIndexes: [0],
+      })
+      const accounts = await keyring.getAccounts()
+      const result = await keyring.deriveContextHash(accounts[0], 'deadbeef')
+      expect(result).toHaveLength(64)
+      expect(result).toMatch(/^[0-9a-f]{64}$/)
+    })
+
+    it('mnemonic and xpriv produce different results for same context', async () => {
+      const sampleXpriv =
+        'xprvA2JBuYsdqVhrC2wGmb9QhBejk9gXXYgM3Jg9xgVYmDMsakDoURc8V7UYos1pP1kev1tG51PPA9A8VMYYCLov1L5c3J7npraxwjeJCquGhDi'
+      const mnemonicKeyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0],
+      })
+      const xprivKeyring = new HdKeyring({
+        xpriv: sampleXpriv,
+        activeIndexes: [0],
+      })
+      const mnemonicAccounts = await mnemonicKeyring.getAccounts()
+      const xprivAccounts = await xprivKeyring.getAccounts()
+      const mnemonicResult = await mnemonicKeyring.deriveContextHash(mnemonicAccounts[0], 'deadbeef')
+      const xprivResult = await xprivKeyring.deriveContextHash(xprivAccounts[0], 'deadbeef')
+      expect(mnemonicResult).not.toBe(xprivResult)
+    })
+
+    it('xpriv result is stable regardless of account activation order', async () => {
+      const sampleXpriv =
+        'xprvA2JBuYsdqVhrC2wGmb9QhBejk9gXXYgM3Jg9xgVYmDMsakDoURc8V7UYos1pP1kev1tG51PPA9A8VMYYCLov1L5c3J7npraxwjeJCquGhDi'
+      const keyring1 = new HdKeyring({
+        xpriv: sampleXpriv,
+        activeIndexes: [0, 1],
+      })
+      const keyring2 = new HdKeyring({
+        xpriv: sampleXpriv,
+        activeIndexes: [1, 0],
+      })
+      const accounts1 = await keyring1.getAccounts()
+      const accounts2 = await keyring2.getAccounts()
+      const result1 = await keyring1.deriveContextHash(accounts1[0], 'deadbeef')
+      const result2 = await keyring2.deriveContextHash(accounts2[0], 'deadbeef')
+      // Both use root xpriv key, so results must match
+      expect(result1).toBe(result2)
+    })
+
+    it('rejects invalid hex context', async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0],
+      })
+      const accounts = await keyring.getAccounts()
+      await expect(keyring.deriveContextHash(accounts[0], 'xyz')).rejects.toThrow()
+      await expect(keyring.deriveContextHash(accounts[0], '')).rejects.toThrow()
+      await expect(keyring.deriveContextHash(accounts[0], 'abc')).rejects.toThrow()
+    })
+
+    it('rejects uninitialized keyring', async () => {
+      const keyring = new HdKeyring()
+      await expect(keyring.deriveContextHash('anypubkey', 'deadbeef')).rejects.toThrow(
+        'requires a mnemonic or xpriv-based keyring'
+      )
     })
   })
 

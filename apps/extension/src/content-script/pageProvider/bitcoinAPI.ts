@@ -3,6 +3,7 @@
  * Handles Bitcoin-related functionality
  */
 import {
+  RequestMethodDeriveContextHashParams,
   RequestMethodGetBitcoinUtxosParams,
   RequestMethodGetInscriptionsParams,
   RequestMethodInscribeTransferParams,
@@ -246,6 +247,16 @@ export class BitcoinAPIMethods {
   getVersion = async () => {
     return this.provider[requestMethodKey]({
       method: 'getVersion'
+    });
+  };
+
+  deriveContextHash = async (context: string) => {
+    const params: RequestMethodDeriveContextHashParams = {
+      context
+    };
+    return this.provider[requestMethodKey]({
+      method: 'deriveContextHash',
+      params
     });
   };
 
