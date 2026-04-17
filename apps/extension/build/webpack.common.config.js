@@ -19,6 +19,13 @@ const stylusRegex = /\.styl$/;
 const stylusModuleRegex = /\.module\.styl$/;
 const WasmModuleWebpackPlugin = require('wasm-module-webpack-plugin');
 const { getBrowserPaths } = require('./paths');
+
+const singletonPackages = {
+  react: path.dirname(require.resolve('react/package.json')),
+  'react-dom': path.dirname(require.resolve('react-dom/package.json')),
+  'react-redux': path.dirname(require.resolve('react-redux/package.json'))
+};
+
 const config = (env) => {
   const version = env.version;
   const paths = getBrowserPaths(env.browser);
@@ -511,6 +518,7 @@ const config = (env) => {
     ],
     resolve: {
       alias: {
+        ...singletonPackages,
         moment: require.resolve('dayjs'),
         stream: require.resolve('stream-browserify')
       },
