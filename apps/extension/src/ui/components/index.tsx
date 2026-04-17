@@ -9,6 +9,7 @@ import { Content } from './Content';
 import { Footer } from './Footer';
 import { Grid } from './Grid';
 import { Header } from './Header';
+import { HeadPicture } from './HeadPicture';
 import { Icon } from './Icon';
 import { Image } from './Image';
 import { InfiniteList } from './InfiniteList';
@@ -37,6 +38,7 @@ export {
   Footer,
   Grid,
   Header,
+  HeadPicture,
   Icon,
   Image,
   InfiniteList,
