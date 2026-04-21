@@ -5,6 +5,17 @@ import { NetworkType } from '@unisat/wallet-types'
 const CAT20_TRANSFER_SIG_SIZE = 5229
 const CAT20_GUARD_SIG_SIZE = 3650
 
+function isDangerousSighashType(sighashType?: number): boolean {
+  if (typeof sighashType !== 'number') return false
+  const outputType = sighashType & bitcoin.Transaction.SIGHASH_OUTPUT_MASK
+  const hasAnyoneCanPay = (sighashType & bitcoin.Transaction.SIGHASH_ANYONECANPAY) !== 0
+
+  return (
+    outputType === bitcoin.Transaction.SIGHASH_NONE ||
+    (outputType === bitcoin.Transaction.SIGHASH_SINGLE && hasAnyoneCanPay)
+  )
+}
+
 interface InputInfo {
   txid: string
   vout: number
@@ -308,10 +319,8 @@ export class PsbtDecoder {
   }
 
   checkSigHashTypes() {
-    const foundSighashNone = this._psbt.data.inputs.some(
-      v => v.sighashType === bitcoin.Transaction.SIGHASH_NONE
-    )
-    if (foundSighashNone) {
+    const foundDangerousSighash = this._psbt.data.inputs.some(v => isDangerousSighashType(v.sighashType))
+    if (foundDangerousSighash) {
       this.risks.push({
         type: RiskType.SIGHASH_NONE,
         level: 'danger',
