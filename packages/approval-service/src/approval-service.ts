@@ -45,12 +45,10 @@ export class ApprovalService extends EventEmitter {
 
   // currently it only support one approval at the same time
   requestApproval = async (data: any, winProps?: any): Promise<any> => {
-    // if (preferenceService.getPopupOpen()) {
-    //   this.approval = null;
-    //   throw ethErrors.provider.userRejectedRequest('please request after user close current popup');
-    // }
+    if (this.approval) {
+      throw new WalletError(ErrorCodes.UNKNOWN, 'Another approval request is already pending')
+    }
 
-    // We will just override the existing open approval with the new one coming in
     return new Promise((resolve, reject) => {
       this.approval = {
         data,
@@ -84,6 +82,15 @@ export class ApprovalService extends EventEmitter {
       this.approvalWindowId = 0
     }
     this.approvalWindowId = await this.platformOpenWindow(winProps)
+  }
+
+  handleWindowRemoved = async (windowId: number) => {
+    if (!this.approval || windowId !== this.approvalWindowId) {
+      return
+    }
+
+    this.approvalWindowId = 0
+    await this.rejectApproval()
   }
 
   platformOpenWindow = async (winProps?: any): Promise<number> => {

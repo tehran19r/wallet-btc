@@ -4,10 +4,7 @@ import { winMgr } from '../webapi';
 
 export function initWindow() {
   winMgr.event.on('windowRemoved', (winId: number) => {
-    if (winId === approvalService.approvalWindowId) {
-      approvalService.approvalWindowId = 0;
-      approvalService.rejectApproval();
-    }
+    approvalService.handleWindowRemoved(winId);
   });
 
   winMgr.event.on('windowFocusChange', (winId: number) => {

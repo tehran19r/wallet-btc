@@ -87,12 +87,14 @@ describe('ApprovalService', () => {
       expect(service.approval?.data).toEqual(data)
     })
 
-    it('overwrites the previous approval when called again', () => {
+    it('rejects a second approval request while one is pending', async () => {
       const first = makeApprovalData({ approvalType: 'first' })
       const second = makeApprovalData({ approvalType: 'second' })
       service.requestApproval(first).catch(() => {})
-      service.requestApproval(second).catch(() => {})
-      expect(service.getApproval()?.approvalType).toBe('second')
+      await expect(service.requestApproval(second)).rejects.toMatchObject({
+        message: 'Another approval request is already pending',
+      })
+      expect(service.getApproval()?.approvalType).toBe('first')
     })
 
     it('returns a Promise that resolves when resolveApproval is called', async () => {
@@ -229,6 +231,33 @@ describe('ApprovalService', () => {
       const props = { width: 400, height: 600 }
       await service.openNotification(props)
       expect(service.platformOpenWindow).toHaveBeenCalledWith(props)
+    })
+  })
+
+  describe('handleWindowRemoved', () => {
+    it('rejects the active approval when its window is closed', async () => {
+      const promise = service.requestApproval(makeApprovalData())
+      await flushAsync()
+
+      await service.handleWindowRemoved(42)
+
+      await expect(promise).rejects.toMatchObject({ code: 4001 })
+      expect(service.approval).toBeNull()
+      expect(service.approvalWindowId).toBe(0)
+    })
+
+    it('ignores unrelated window removals', async () => {
+      service.requestApproval(makeApprovalData()).catch(() => {})
+      await flushAsync()
+
+      await service.handleWindowRemoved(99)
+
+      expect(service.approval).not.toBeNull()
+      expect(service.approvalWindowId).toBe(42)
+    })
+
+    it('ignores window removals when no approval is pending', async () => {
+      await expect(service.handleWindowRemoved(42)).resolves.toBeUndefined()
     })
   })
 
