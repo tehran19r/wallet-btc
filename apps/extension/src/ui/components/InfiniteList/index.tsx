@@ -4,6 +4,7 @@ import { Column, Row } from '@/ui/components';
 import { Empty } from '@/ui/components/Empty';
 import { Pagination } from '@/ui/components/Pagination';
 import { LoadingOutlined } from '@ant-design/icons';
+import { useI18n } from '@unisat/wallet-state';
 
 interface InfiniteListProps<T> {
   data: T[];
@@ -30,6 +31,7 @@ export function InfiniteList<T>({
   height,
   numColumns = 1
 }: InfiniteListProps<T>) {
+  const { t } = useI18n();
   const [pagination, setPagination] = useState({ currentPage: 1, pageSize: 20 });
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -60,7 +62,7 @@ export function InfiniteList<T>({
   if (!loading && data.length === 0) {
     return (
       <Column style={{ minHeight: 150 }} itemsCenter justifyCenter>
-        <Empty text="Empty" />
+        <Empty text={t('empty')} />
       </Column>
     );
   }
