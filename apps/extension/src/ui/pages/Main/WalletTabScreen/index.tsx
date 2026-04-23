@@ -215,7 +215,7 @@ export default function WalletTabScreen() {
           <HomeTips />
 
           <BalanceCard />
-          <WalletActions address={currentAccount?.address} chain={chain} />
+          <WalletActions chain={chain} />
 
           <AnnouncementCard />
 

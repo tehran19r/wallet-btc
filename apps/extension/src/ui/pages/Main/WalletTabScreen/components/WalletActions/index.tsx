@@ -6,6 +6,7 @@ import { BuyBTCModal } from '@/ui/pages/BuyBTC/BuyBTCModal';
 import { TypeChain } from '@unisat/wallet-shared';
 import {
   useChainType,
+  useCurrentAddress,
   useI18n,
   useNavigation,
   useResetFeeRateBar,
@@ -25,7 +26,6 @@ type WalletActionItem = {
   onClick: NonNullable<ButtonProps['onClick']>;
   disabled?: boolean;
   priority: number;
-  pinned?: boolean;
   overflowPreset?: ButtonProps['preset'];
   dataTestId: string;
 };
@@ -41,6 +41,7 @@ export const WalletActions = ({ chain }: WalletActionsProps) => {
   const chainType = useChainType();
   const [buyBtcModalVisible, setBuyBtcModalVisible] = useState(false);
   const walletConfig = useWalletConfig();
+  const address = useCurrentAddress();
   const { t } = useI18n();
 
   const handleUtxoClick = () => {
@@ -57,6 +58,10 @@ export const WalletActions = ({ chain }: WalletActionsProps) => {
     nav.navigate('TxCreateScreen');
   };
 
+  const onHistoryClick = () => {
+    nav.navToExplorerAddress(address);
+  };
+
   const buyDisabled = chainType !== ChainType.BITCOIN_MAINNET && chainType !== ChainType.FRACTAL_BITCOIN_MAINNET;
 
   const actionItems = useMemo<WalletActionItem[]>(() => {
@@ -67,7 +72,6 @@ export const WalletActions = ({ chain }: WalletActionsProps) => {
         icon: 'receive',
         onClick: onReceiveClick,
         priority: 1,
-        pinned: true,
         dataTestId: 'receive-button'
       },
       {
@@ -76,7 +80,6 @@ export const WalletActions = ({ chain }: WalletActionsProps) => {
         icon: 'send',
         onClick: onSendClick,
         priority: 2,
-        pinned: true,
         dataTestId: 'send-button'
       }
     ];
@@ -88,10 +91,19 @@ export const WalletActions = ({ chain }: WalletActionsProps) => {
         icon: 'utxo',
         onClick: handleUtxoClick,
         priority: 3,
-        pinned: true,
         dataTestId: 'utxo-button'
       });
     }
+
+    items.push({
+      key: 'history',
+      label: t('history'),
+      icon: 'history',
+      onClick: () => onHistoryClick(),
+      priority: 4,
+      overflowPreset: 'homeGold',
+      dataTestId: 'history-button'
+    });
 
     items.push({
       key: 'buy',
@@ -108,18 +120,19 @@ export const WalletActions = ({ chain }: WalletActionsProps) => {
   }, [buyDisabled, handleUtxoClick, isFractal, t, walletConfig.disableUtxoTools]);
 
   const { primaryActions, overflowActions } = useMemo(() => {
-    const pinnedActions = actionItems
-      .filter(item => item.pinned)
-      .sort((a, b) => a.priority - b.priority);
-    const extraActions = actionItems
-      .filter(item => !item.pinned)
-      .sort((a, b) => a.priority - b.priority);
-    const nextPrimaryActions = [...pinnedActions, ...extraActions].slice(0, MAX_PRIMARY_ACTIONS);
-    const primaryKeys = new Set(nextPrimaryActions.map(item => item.key));
+    const items = actionItems.sort((a, b) => a.priority - b.priority);
+    let primaryActions: WalletActionItem[] = [];
+    let overflowActions: WalletActionItem[] = [];
+    if (items.length <= MAX_PRIMARY_ACTIONS) {
+      primaryActions = items;
+    } else {
+      primaryActions = items.slice(0, MAX_PRIMARY_ACTIONS - 1);
+      overflowActions = items.slice(MAX_PRIMARY_ACTIONS - 1);
+    }
 
     return {
-      primaryActions: nextPrimaryActions,
-      overflowActions: actionItems.filter(item => !primaryKeys.has(item.key))
+      primaryActions,
+      overflowActions
     };
   }, [actionItems]);
 
@@ -142,13 +155,13 @@ export const WalletActions = ({ chain }: WalletActionsProps) => {
   return (
     <>
       <Row justifyCenter mt="md" style={{ flexWrap: 'wrap' }}>
-        {primaryActions.map(action => renderActionButton(action, 'primary'))}
+        {primaryActions.map((action) => renderActionButton(action, 'primary'))}
         {overflowActions.length > 0 && (
           <Button
             text={t('more')}
             preset={showOverflowActions ? 'homeGold' : 'home'}
             icon="more"
-            onClick={() => setShowOverflowActions(prev => !prev)}
+            onClick={() => setShowOverflowActions((prev) => !prev)}
             data-testid="more-button"
           />
         )}
@@ -156,7 +169,18 @@ export const WalletActions = ({ chain }: WalletActionsProps) => {
 
       {showOverflowActions && overflowActions.length > 0 && (
         <Row justifyCenter mt="md" style={{ flexWrap: 'wrap' }}>
-          {overflowActions.map(action => renderActionButton(action, 'overflow'))}
+          {/* add empty action place to align the overflow button to the right*/}
+          {MAX_PRIMARY_ACTIONS - overflowActions.length > 0 && (
+            <Button preset="homeGold" style={{ opacity: 0 }}></Button>
+          )}
+          {MAX_PRIMARY_ACTIONS - overflowActions.length > 1 && (
+            <Button preset="homeGold" style={{ opacity: 0 }}></Button>
+          )}
+          {MAX_PRIMARY_ACTIONS - overflowActions.length > 2 && (
+            <Button preset="homeGold" style={{ opacity: 0 }}></Button>
+          )}
+
+          {overflowActions.map((action) => renderActionButton(action, 'overflow'))}
         </Row>
       )}
 
