@@ -177,7 +177,7 @@ export default function BRC20TokenScreen() {
                   <Button
                     text={t('more')}
                     preset="swap"
-                    icon="more"
+                    icon="more_grey"
                     onClick={handleOpenInSwapMore}
                     style={outWalletActionButtonStyle}
                     iconSize={{

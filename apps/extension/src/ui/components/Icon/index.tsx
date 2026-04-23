@@ -41,6 +41,7 @@ export const svgRegistry = {
   sortTop: '/images/icons/action/sort-top.svg',
   sortDrag: '/images/icons/action/sort-drag.svg',
   more: '/images/icons/action/more.svg',
+  more_grey: '/images/icons/action/more_grey.svg',
   moreInfo: '/images/icons/action/moreinfo.svg',
   eye: '/images/icons/action/eye.svg',
   'eye-slash': '/images/icons/action/eye-slash.svg',
@@ -213,6 +214,7 @@ const iconImgList: Array<IconTypes> = [
   'psbt_opreturn',
   'notification',
   'unlock',
+  'more',
 
   'unisat_titles',
   'unisat_points',
