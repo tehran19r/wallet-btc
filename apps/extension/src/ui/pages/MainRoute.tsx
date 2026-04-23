@@ -234,10 +234,7 @@ export const routes = {
     path: '/account/create-cold-wallet',
     element: <CreateColdWalletScreen />
   },
-  CreateWatchWalletScreen: {
-    path: '/account/create-watch-wallet',
-    element: <CreateWatchWalletScreen />
-  },
+
   UpgradeNoticeScreen: {
     path: '/settings/upgrade-notice',
     element: <UpgradeNoticeScreen />
@@ -380,6 +377,11 @@ if (process.env.NODE_ENV === 'development') {
   routes['CosmosSignDemo'] = {
     path: '/test-cosmos-sign',
     element: <CosmosSignDemo />
+  };
+
+  routes['CreateWatchWalletScreen'] = {
+    path: '/account/create-watch-wallet',
+    element: <CreateWatchWalletScreen />
   };
 }
 
