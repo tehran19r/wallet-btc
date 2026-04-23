@@ -2079,7 +2079,7 @@
     "message": "Этот сайт запрашивает уникальный идентификатор, привязанный к вашему кошельку, для следующего контекста."
   },
   "derive_context_hash_app_name": {
-    "message": "Application"
+    "message": "Приложение"
   },
   "derive_context_hash_context": {
     "message": "Контекст"

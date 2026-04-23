@@ -2079,7 +2079,7 @@
     "message": "このサイトは、以下のコンテキストに対してウォレットに紐づく一意の識別子を要求しています。"
   },
   "derive_context_hash_app_name": {
-    "message": "Application"
+    "message": "アプリケーション"
   },
   "derive_context_hash_context": {
     "message": "コンテキスト"

@@ -2079,7 +2079,7 @@
     "message": "Ce site demande un identifiant unique lié à votre portefeuille pour le contexte suivant."
   },
   "derive_context_hash_app_name": {
-    "message": "Application"
+    "message": "Application web"
   },
   "derive_context_hash_context": {
     "message": "Contexte"
