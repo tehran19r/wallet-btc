@@ -84,17 +84,6 @@ export const WalletActions = ({ chain }: WalletActionsProps) => {
       }
     ];
 
-    if (!walletConfig.disableUtxoTools) {
-      items.push({
-        key: 'utxo',
-        label: t('utxo').toUpperCase(),
-        icon: 'utxo',
-        onClick: handleUtxoClick,
-        priority: 3,
-        dataTestId: 'utxo-button'
-      });
-    }
-
     items.push({
       key: 'history',
       label: t('history'),
@@ -111,10 +100,21 @@ export const WalletActions = ({ chain }: WalletActionsProps) => {
       icon: isFractal ? 'fb' : 'bitcoin',
       onClick: () => setBuyBtcModalVisible(true),
       disabled: buyDisabled,
-      priority: 10,
+      priority: 5,
       overflowPreset: 'homeGold',
       dataTestId: 'buy-button'
     });
+
+    if (!walletConfig.disableUtxoTools) {
+      items.push({
+        key: 'utxo',
+        label: t('utxo').toUpperCase(),
+        icon: 'utxo',
+        onClick: handleUtxoClick,
+        priority: 6,
+        dataTestId: 'utxo-button'
+      });
+    }
 
     return items;
   }, [buyDisabled, handleUtxoClick, isFractal, t, walletConfig.disableUtxoTools]);
