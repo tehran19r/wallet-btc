@@ -69,91 +69,95 @@ export function useBRC20TokenHistoryLogic(props: { ticker: string; displayName?:
   }, [items])
 
   const displayItems = useMemo(() => {
-    return groupedItems.map(({ date, items }) => ({
-      date,
-      items: items
-        .map(item => {
-          const key = item.txid + item.type
+    return groupedItems
+      .map(({ date, items }) => ({
+        date,
+        items: items
+          .map(item => {
+            const key = item.txid + item.type
 
-          let mainTitle = item.type
-          let subTitle = ''
-          let icon = ''
-          let isPending = false
-          if (item.blocktime == 0) {
-            isPending = true
-          }
-
-          if (item.type === 'send') {
-            mainTitle = t('brc20_history_type_send')
-            subTitle = t('brc20_history_to') + ' ' + shortAddress(item.to)
-            icon = 'history_send'
-            if (item.to === SWAP_MODULE_ADDRESS) {
-              mainTitle = t('brc20_history_type_wrap')
-              subTitle = t('brc20_history_to') + ' ' + 'InSwap'
-              icon = 'history_wrap'
-            } else if (item.to === BRC20PROG_MODULE_ADDRESS) {
-              mainTitle = t('brc20_history_type_wrap')
-              subTitle = t('brc20_history_to') + ' ' + 'brc2.0'
-              icon = 'history_wrap'
+            let mainTitle = item.type
+            let subTitle = ''
+            let icon = ''
+            let isPending = false
+            if (item.blocktime == 0) {
+              isPending = true
             }
-          } else if (item.type === 'single-step-transfer') {
-            if (item.from === account.address) {
+
+            if (item.type === 'send') {
               mainTitle = t('brc20_history_type_send')
               subTitle = t('brc20_history_to') + ' ' + shortAddress(item.to)
               icon = 'history_send'
-            } else {
+              if (item.to === SWAP_MODULE_ADDRESS) {
+                mainTitle = t('brc20_history_type_wrap')
+                subTitle = t('brc20_history_to') + ' ' + 'InSwap'
+                icon = 'history_wrap'
+              } else if (item.to === BRC20PROG_MODULE_ADDRESS) {
+                mainTitle = t('brc20_history_type_wrap')
+                subTitle = t('brc20_history_to') + ' ' + 'brc2.0'
+                icon = 'history_wrap'
+              }
+            } else if (item.type === 'single-step-transfer') {
+              if (item.from === account.address) {
+                mainTitle = t('brc20_history_type_send')
+                subTitle = t('brc20_history_to') + ' ' + shortAddress(item.to)
+                icon = 'history_send'
+              } else {
+                mainTitle = t('brc20_history_type_receive')
+                subTitle = t('brc20_history_from') + ' ' + shortAddress(item.from)
+                icon = 'history_receive'
+              }
+            } else if (item.type === 'receive') {
               mainTitle = t('brc20_history_type_receive')
               subTitle = t('brc20_history_from') + ' ' + shortAddress(item.from)
               icon = 'history_receive'
+            } else if (item.type === 'withdraw') {
+              mainTitle = t('brc20_history_type_unwrap')
+              subTitle = t('brc20_history_from') + ' ' + 'InSwap'
+              icon = 'history_unwrap'
+            } else if (item.type === 'inscribe-transfer') {
+              mainTitle = t('brc20_history_type_inscribe_transfer')
+              icon = 'history_inscribe'
+            } else if (item.type === 'inscribe-mint') {
+              mainTitle = t('brc20_history_type_inscribe_mint')
+              icon = 'history_inscribe'
+            } else if (item.type === 'inscribe-deploy') {
+              mainTitle = t('brc20_history_type_inscribe_deploy')
+              icon = 'history_inscribe'
+            } else if (item.type === 'brc20prog-withdraw-transfer') {
+              mainTitle = t('brc20_history_type_unwrap')
+              subTitle = t('brc20_history_from') + ' ' + 'brc2.0'
+              icon = 'history_unwrap'
+            } else if (item.type === 'brc20prog-withdraw-inscribe') {
+              mainTitle = t('brc20_history_type_inscribe_transfer')
+              subTitle = t('brc20_history_type_unwrap') + ' brc2.0'
+              icon = 'history_inscribe'
+            } else {
+              const isSendLike = item.from === account.address
+              mainTitle = isSendLike
+                ? t('brc20_history_type_send')
+                : t('brc20_history_type_receive')
+              subTitle = isSendLike
+                ? t('brc20_history_to') + ' ' + shortAddress(item.to)
+                : t('brc20_history_from') + ' ' + shortAddress(item.from)
+              icon = isSendLike ? 'history_send' : 'history_receive'
             }
-          } else if (item.type === 'receive') {
-            mainTitle = t('brc20_history_type_receive')
-            subTitle = t('brc20_history_from') + ' ' + shortAddress(item.from)
-            icon = 'history_receive'
-          } else if (item.type === 'withdraw') {
-            mainTitle = t('brc20_history_type_unwrap')
-            subTitle = t('brc20_history_from') + ' ' + 'InSwap'
-            icon = 'history_unwrap'
-          } else if (item.type === 'inscribe-transfer') {
-            mainTitle = t('brc20_history_type_inscribe_transfer')
-            icon = 'history_inscribe'
-          } else if (item.type === 'inscribe-mint') {
-            mainTitle = t('brc20_history_type_inscribe_mint')
-            icon = 'history_inscribe'
-          } else if (item.type === 'inscribe-deploy') {
-            mainTitle = t('brc20_history_type_inscribe_deploy')
-            icon = 'history_inscribe'
-          } else if (item.type === 'brc20prog-withdraw-transfer') {
-            mainTitle = t('brc20_history_type_unwrap')
-            subTitle = t('brc20_history_from') + ' ' + 'brc2.0'
-            icon = 'history_unwrap'
-          } else if (item.type === 'brc20prog-withdraw-inscribe') {
-            mainTitle = t('brc20_history_type_inscribe_transfer')
-            subTitle = t('brc20_history_type_unwrap') + ' brc2.0'
-            icon = 'history_inscribe'
-          } else {
-            const isSendLike = item.from === account.address
-            mainTitle = isSendLike ? t('brc20_history_type_send') : t('brc20_history_type_receive')
-            subTitle = isSendLike
-              ? t('brc20_history_to') + ' ' + shortAddress(item.to)
-              : t('brc20_history_from') + ' ' + shortAddress(item.from)
-            icon = isSendLike ? 'history_send' : 'history_receive'
-          }
 
-          const amount = item.amount
+            const amount = item.amount
 
-          return {
-            key,
-            icon,
-            mainTitle,
-            subTitle,
-            amount,
-            pending: isPending,
-            txid: item.txid,
-          }
-        })
-        .filter(v => v !== null),
-    })).filter(group => group.items.length > 0)
+            return {
+              key,
+              icon,
+              mainTitle,
+              subTitle,
+              amount,
+              pending: isPending,
+              txid: item.txid,
+            }
+          })
+          .filter(v => v !== null),
+      }))
+      .filter(group => group.items.length > 0)
   }, [account.address, t, groupedItems])
 
   return {
@@ -383,7 +387,7 @@ export function useBRC20TokenScreenLogic() {
   }
 
   const onClickWrapInSwap = () => {
-    const url = `https://inswap.cc/swap?tab=deposit`
+    const url = `https://inswap.cc/swap?tab=deposit&t=${encodeURIComponent(ticker)}`
     nav.navToUrl(url)
   }
 
