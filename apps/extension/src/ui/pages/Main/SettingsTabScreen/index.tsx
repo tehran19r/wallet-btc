@@ -126,7 +126,7 @@ export default function SettingsTabScreen() {
           </Row>
         }
         RightComponent={
-          <Row itemsCenter gap="md">
+          <Row itemsCenter>
             <BaseView style={{ position: 'relative' }}>
               <Icon
                 icon="notification"
@@ -151,15 +151,17 @@ export default function SettingsTabScreen() {
                   }}></BaseView>
               ) : null}
             </BaseView>
+            <BaseView style={{ position: 'relative', marginRight: 5 }}>
+              <Icon
+                icon="language"
+                size={20}
+                color="textDim"
+                onClick={() => {
+                  nav.navigate('LanguageScreen');
+                }}
+              />
+            </BaseView>
 
-            <Icon
-              icon="language"
-              size={20}
-              color="textDim"
-              onClick={() => {
-                nav.navigate('LanguageScreen');
-              }}
-            />
             <SwitchNetworkBar />
           </Row>
         }
