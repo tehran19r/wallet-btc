@@ -1,5 +1,9 @@
 # Derive Context Hash
 
+> [!WARNING]
+> **Experimental API**: `deriveContextHash` is experimental and may change in future versions.
+> Use feature detection and provide a fallback path in production integrations.
+
 ### deriveContextHash
 
 ```

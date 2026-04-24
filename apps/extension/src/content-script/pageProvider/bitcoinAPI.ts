@@ -250,6 +250,9 @@ export class BitcoinAPIMethods {
     });
   };
 
+  /**
+   * @experimental This method may change in future versions.
+   */
   deriveContextHash = async (appName: string, context: string) => {
     const params: RequestMethodDeriveContextHashParams = {
       appName,

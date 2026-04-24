@@ -40,6 +40,9 @@ export type ProviderMethodList = {
     signerAddress: string
     data: string
   }
+  /**
+   * @experimental This method may change in future versions.
+   */
   deriveContextHash: {
     appName: string
     context: string
