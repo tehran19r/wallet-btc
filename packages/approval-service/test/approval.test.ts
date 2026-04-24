@@ -24,6 +24,7 @@ describe('ApprovalService', () => {
     service = new ApprovalService()
     service.platformOpenWindow = vi.fn().mockResolvedValue(42)
     service.platformCloseWindow = vi.fn().mockResolvedValue(undefined)
+    service.platformFocusWindow = vi.fn().mockResolvedValue(undefined)
   })
 
   // ── initial state ─────────────────────────────────────────────────────────
@@ -95,6 +96,43 @@ describe('ApprovalService', () => {
         message: 'Another approval request is already pending',
       })
       expect(service.getApproval()?.approvalType).toBe('first')
+    })
+
+    it('focuses existing approval window before rejecting a second request', async () => {
+      const first = makeApprovalData({ approvalType: 'first' })
+      const second = makeApprovalData({ approvalType: 'second' })
+      service.requestApproval(first).catch(() => {})
+      await flushAsync()
+
+      await expect(service.requestApproval(second)).rejects.toMatchObject({
+        message: 'Another approval request is already pending',
+      })
+      expect(service.platformFocusWindow).toHaveBeenCalledWith(42)
+    })
+
+    it('still rejects second request when focus fails', async () => {
+      const first = makeApprovalData({ approvalType: 'first' })
+      const second = makeApprovalData({ approvalType: 'second' })
+      service.platformFocusWindow = vi.fn().mockRejectedValue(new Error('focus failed'))
+      service.requestApproval(first).catch(() => {})
+      await flushAsync()
+
+      await expect(service.requestApproval(second)).rejects.toMatchObject({
+        message: 'Another approval request is already pending',
+      })
+      expect(service.getApproval()?.approvalType).toBe('first')
+    })
+
+    it('does not try to focus when there is no window id', async () => {
+      const first = makeApprovalData({ approvalType: 'first' })
+      const second = makeApprovalData({ approvalType: 'second' })
+      service.requestApproval(first).catch(() => {})
+      service.approvalWindowId = 0
+
+      await expect(service.requestApproval(second)).rejects.toMatchObject({
+        message: 'Another approval request is already pending',
+      })
+      expect(service.platformFocusWindow).not.toHaveBeenCalled()
     })
 
     it('returns a Promise that resolves when resolveApproval is called', async () => {

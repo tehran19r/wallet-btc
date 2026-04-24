@@ -77,6 +77,10 @@ const remove = async (winId) => {
   return browserWindowsRemove(winId);
 };
 
+const focus = async (winId: number) => {
+  await browserWindowsUpdate(winId, { focused: true, state: 'normal' });
+};
+
 const openNotification = ({ route = '', ...rest } = {}): Promise<number | undefined> => {
   const url = `notification.html${route && `#${route}`}`;
 
@@ -86,5 +90,6 @@ const openNotification = ({ route = '', ...rest } = {}): Promise<number | undefi
 export default {
   openNotification,
   event,
-  remove
+  remove,
+  focus
 };

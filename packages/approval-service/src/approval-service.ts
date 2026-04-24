@@ -46,6 +46,13 @@ export class ApprovalService extends EventEmitter {
   // currently it only support one approval at the same time
   requestApproval = async (data: any, winProps?: any): Promise<any> => {
     if (this.approval) {
+      if (this.approvalWindowId) {
+        try {
+          await this.platformFocusWindow(this.approvalWindowId)
+        } catch (e) {
+          // keep original behavior even if focusing existing window fails
+        }
+      }
       throw new WalletError(ErrorCodes.UNKNOWN, 'Another approval request is already pending')
     }
 
@@ -98,6 +105,10 @@ export class ApprovalService extends EventEmitter {
   }
 
   platformCloseWindow = async (windowId: number) => {
+    // todo
+  }
+
+  platformFocusWindow = async (windowId: number) => {
     // todo
   }
 }

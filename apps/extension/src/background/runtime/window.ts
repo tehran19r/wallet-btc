@@ -22,4 +22,8 @@ export function initWindow() {
   approvalService.platformCloseWindow = async (winId) => {
     await winMgr.remove(winId);
   };
+
+  approvalService.platformFocusWindow = async (winId) => {
+    await winMgr.focus(winId);
+  };
 }
