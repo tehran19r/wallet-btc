@@ -5,12 +5,20 @@ import { useBRC20TokenHistoryLogic, useI18n, useNavigation } from '@unisat/walle
 export function BRC20TokenHistory(props: { ticker: string; displayName?: string }) {
   const { t } = useI18n();
   const nav = useNavigation();
-  const { isEmpty, isFailed, displayItems } = useBRC20TokenHistoryLogic(props);
+  const { isEmpty, isFailed, isLoading, displayItems } = useBRC20TokenHistoryLogic(props);
 
   if (isFailed) {
     return (
       <Column style={{ minHeight: 150 }} itemsCenter justifyCenter>
         <Text text={t('load_failed')} preset="sub" />
+      </Column>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Column style={{ minHeight: 150 }} itemsCenter justifyCenter>
+        <Text text={t('loading')} preset="sub" />
       </Column>
     );
   }
