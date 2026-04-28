@@ -60,8 +60,10 @@ export function BRC20TokenDetail(props: {
         <Line />
 
         <Section title={t('decimal')} value={tokenSummary.tokenInfo.decimal} />
+        <Line />
 
         <Section title={t('holders_count')} value={showLongNumber(tokenSummary.tokenInfo.holdersCount)} />
+        <Line />
 
         <Section title={t('history_count')} value={showLongNumber(tokenSummary.tokenInfo.historyCount)} />
 

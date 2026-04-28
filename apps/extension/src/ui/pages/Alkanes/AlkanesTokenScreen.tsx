@@ -1,4 +1,16 @@
-import { Button, Column, Content, Footer, Header, Icon, Layout, Loading, Row, Text } from '@/ui/components';
+import {
+  Button,
+  Column,
+  Content,
+  Footer,
+  Header,
+  Icon,
+  Layout,
+  Loading,
+  Row,
+  Text,
+  ViewOnExplorerAction
+} from '@/ui/components';
 import { BRC20Ticker } from '@/ui/components/BRC20Ticker';
 import { Line } from '@/ui/components/Line';
 import { Section } from '@/ui/components/Section';
@@ -24,7 +36,8 @@ export default function AlkanesTokenScreen() {
     setWarning,
     onClickMint,
     onClickSend,
-    onClickTrade
+    onClickTrade,
+    onClickViewOnExplorer
   } = useAlkanesTokenScreenLogic();
 
   if (loading) {
@@ -146,7 +159,7 @@ export default function AlkanesTokenScreen() {
               }
             />
 
-            <Line />
+            <ViewOnExplorerAction onClick={onClickViewOnExplorer} />
           </Column>
 
           {warning && (

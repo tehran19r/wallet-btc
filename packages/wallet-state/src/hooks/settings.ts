@@ -167,6 +167,11 @@ export function useRunesTokenInfoExplorerUrl(runeId: string) {
   return `${chain.unisatExplorerUrl}/runes/detail/${encodeURIComponent(runeId)}`
 }
 
+export function useAlkanesTokenInfoExplorerUrl(alkaneId: string) {
+  const chain = useChain()!
+  return `${chain.unisatExplorerUrl}/alkanes/detail/${encodeURIComponent(alkaneId)}`
+}
+
 export function useUnisatWebsite() {
   const chainType = useChainType()
   return CHAINS_MAP[chainType]!.unisatUrl
