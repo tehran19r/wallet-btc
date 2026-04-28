@@ -142,90 +142,92 @@ export default function BRC20TokenScreen() {
             </Row>
           </Column>
 
-          <Column mb="md" style={outWalletCardStyle}>
-            <BRC20OutWalletBalance items={outWalletBalanceItems} />
-            {showSwapBalance ? (
-              <Row gap="sm">
-                <Button
-                  text={t('swap_wrap')}
-                  preset="swap"
-                  icon="swap_wrap"
-                  onClick={onClickWrapInSwap}
-                  style={outWalletActionButtonStyle}
-                  iconSize={{
-                    width: 12,
-                    height: 12
-                  }}
-                  full
-                />
-                <Button
-                  text={t('swap_unwrap')}
-                  preset="swap"
-                  icon="swap_unwrap"
-                  onClick={onClickUnwrapInSwap}
-                  style={outWalletActionButtonStyle}
-                  iconSize={{
-                    width: 12,
-                    height: 12
-                  }}
-                  full
-                />
-                <Button
-                  text={t('more')}
-                  preset="swap"
-                  icon="more_grey"
-                  onClick={handleOpenInSwapMore}
-                  style={outWalletActionButtonStyle}
-                  iconSize={{
-                    width: 12,
-                    height: 12
-                  }}
-                  full
-                />
-              </Row>
-            ) : null}
+          {showSwapBalance || showProgBalance ? (
+            <Column mb="md" style={outWalletCardStyle}>
+              <BRC20OutWalletBalance items={outWalletBalanceItems} />
+              {showSwapBalance ? (
+                <Row gap="sm">
+                  <Button
+                    text={t('swap_wrap')}
+                    preset="swap"
+                    icon="swap_wrap"
+                    onClick={onClickWrapInSwap}
+                    style={outWalletActionButtonStyle}
+                    iconSize={{
+                      width: 12,
+                      height: 12
+                    }}
+                    full
+                  />
+                  <Button
+                    text={t('swap_unwrap')}
+                    preset="swap"
+                    icon="swap_unwrap"
+                    onClick={onClickUnwrapInSwap}
+                    style={outWalletActionButtonStyle}
+                    iconSize={{
+                      width: 12,
+                      height: 12
+                    }}
+                    full
+                  />
+                  <Button
+                    text={t('more')}
+                    preset="swap"
+                    icon="more_grey"
+                    onClick={handleOpenInSwapMore}
+                    style={outWalletActionButtonStyle}
+                    iconSize={{
+                      width: 12,
+                      height: 12
+                    }}
+                    full
+                  />
+                </Row>
+              ) : null}
 
-            {showProgBalance ? (
-              <Row gap="sm">
-                <Button
-                  text={t('swap_wrap')}
-                  preset="swap"
-                  icon="swap_wrap"
-                  onClick={onClickWrapBrc20Prog}
-                  style={outWalletActionButtonStyle}
-                  iconSize={{
-                    width: 12,
-                    height: 12
-                  }}
-                  full
-                />
-                <Button
-                  text={t('swap_unwrap')}
-                  preset="swap"
-                  icon="swap_unwrap"
-                  onClick={onClickUnwrapBrc20Prog}
-                  style={outWalletActionButtonStyle}
-                  iconSize={{
-                    width: 12,
-                    height: 12
-                  }}
-                  full
-                />
-                <Button
-                  text={t('more')}
-                  preset="swap"
-                  icon="more_grey"
-                  onClick={handleOpenProgMore}
-                  style={outWalletActionButtonStyle}
-                  iconSize={{
-                    width: 12,
-                    height: 12
-                  }}
-                  full
-                />
-              </Row>
-            ) : null}
-          </Column>
+              {showProgBalance ? (
+                <Row gap="sm">
+                  <Button
+                    text={t('swap_wrap')}
+                    preset="swap"
+                    icon="swap_wrap"
+                    onClick={onClickWrapBrc20Prog}
+                    style={outWalletActionButtonStyle}
+                    iconSize={{
+                      width: 12,
+                      height: 12
+                    }}
+                    full
+                  />
+                  <Button
+                    text={t('swap_unwrap')}
+                    preset="swap"
+                    icon="swap_unwrap"
+                    onClick={onClickUnwrapBrc20Prog}
+                    style={outWalletActionButtonStyle}
+                    iconSize={{
+                      width: 12,
+                      height: 12
+                    }}
+                    full
+                  />
+                  <Button
+                    text={t('more')}
+                    preset="swap"
+                    icon="more_grey"
+                    onClick={handleOpenProgMore}
+                    style={outWalletActionButtonStyle}
+                    iconSize={{
+                      width: 12,
+                      height: 12
+                    }}
+                    full
+                  />
+                </Row>
+              ) : null}
+            </Column>
+          ) : null}
 
           <TabBar
             defaultActiveKey={enableHistory ? activeTab : BRC20TokenScreenTabKey.DETAILS}

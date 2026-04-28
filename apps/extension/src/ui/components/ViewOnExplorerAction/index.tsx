@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 
 import type { Gap } from '@/ui/theme/spacing';
 import { useI18n } from '@unisat/wallet-state';
+import { useChain } from '@unisat/wallet-state';
 
 import { Icon } from '../Icon';
 import { Row } from '../Row';
@@ -17,6 +18,12 @@ export function ViewOnExplorerAction({
   style?: CSSProperties;
 }) {
   const { t } = useI18n();
+
+  const chain = useChain();
+
+  if (!chain.unisatExplorerUrl) {
+    return null;
+  }
 
   return (
     <Row
