@@ -25,6 +25,11 @@ async function decodeWithSighashType(sighashType: number) {
 }
 
 describe('decode psbt sighash risk detection', () => {
+  it('detects SIGHASH_NONE as dangerous', async () => {
+    const dangerous = await decodeWithSighashType(bitcoin.Transaction.SIGHASH_NONE)
+    expect(dangerous.risks.some(r => r.type === RiskType.SIGHASH_NONE)).toBe(true)
+  })
+
   it('detects SIGHASH_NONE | ANYONECANPAY as dangerous', async () => {
     const dangerous = await decodeWithSighashType(
       bitcoin.Transaction.SIGHASH_NONE | bitcoin.Transaction.SIGHASH_ANYONECANPAY
@@ -32,11 +37,11 @@ describe('decode psbt sighash risk detection', () => {
     expect(dangerous.risks.some(r => r.type === RiskType.SIGHASH_NONE)).toBe(true)
   })
 
-  it('detects SIGHASH_SINGLE | ANYONECANPAY as dangerous', async () => {
-    const dangerous = await decodeWithSighashType(
+  it('does not flag SIGHASH_SINGLE | ANYONECANPAY as dangerous', async () => {
+    const safe = await decodeWithSighashType(
       bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY
     )
-    expect(dangerous.risks.some(r => r.type === RiskType.SIGHASH_NONE)).toBe(true)
+    expect(safe.risks.some(r => r.type === RiskType.SIGHASH_NONE)).toBe(false)
   })
 
   it('does not flag SIGHASH_ALL as dangerous', async () => {
