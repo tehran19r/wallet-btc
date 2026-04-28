@@ -12,8 +12,9 @@ import {
 import { ColdWalletKeyring, KeystoneKeyring } from '@unisat/keyring-service'
 import { DisplayedKeyring, Keyring, KeyringType, ToSignInput } from '@unisat/keyring-service/types'
 import * as txHelpers from '@unisat/tx-helpers'
-import { signMessageOfBIP322Simple, UnspentOutput } from '@unisat/tx-helpers'
+import { UnspentOutput, signMessageOfBIP322Simple } from '@unisat/tx-helpers'
 import {
+  UTXO_DUST,
   bitcoin,
   eccManager,
   genPsbtOfBIP322Simple,
@@ -24,23 +25,21 @@ import {
   scriptPkToAddress,
   toPsbtNetwork,
   toXOnly,
-  UTXO_DUST,
 } from '@unisat/wallet-bitcoin'
 import {
   Account,
+  AddressTokenSummary,
   AddressUserToSignInput,
-  bgI18n,
-  BitcoinBalance,
   BRC20HistoryItem,
   BUS_EVENTS,
   BUS_METHODS,
+  BitcoinBalance,
   CAT_VERSION,
   CHAINS_MAP,
   ConnectedSite,
   CosmosBalance,
   CosmosSignDataType,
   DummyTxType,
-  getLockTimeInfo,
   LocalPsbtSummary,
   PlatformEnv,
   PsbtActionDetailType,
@@ -50,15 +49,17 @@ import {
   RateUsStatus,
   RiskType,
   SESSION_EVENTS,
-  SignedData,
-  SignedMessage,
   SignMessageType,
   SignPsbtOptions,
-  t,
+  SignedData,
+  SignedMessage,
   ToSignData,
   ToSignMessage,
   UTXO,
   WalletKeyring,
+  bgI18n,
+  getLockTimeInfo,
+  t,
 } from '@unisat/wallet-shared'
 import { AddressType, ChainType, NetworkType } from '@unisat/wallet-types'
 import {
@@ -2055,11 +2056,23 @@ export class WalletController extends BaseController {
     return walletApiService.bitcoin.decodeContracts(contracts, account)
   }
 
-  getBRC20List = async (address: string, currentPage: number, pageSize: number) => {
+  getBRC20List = async ({
+    address,
+    currentPage,
+    pageSize,
+  }: {
+    address: string
+    currentPage: number
+    pageSize: number
+  }) => {
     const cursor = (currentPage - 1) * pageSize
     const size = pageSize
 
-    const { total, list } = await walletApiService.brc20.getBRC20List(address, cursor, size)
+    const { total, list } = await walletApiService.brc20.getBRC20List({
+      address,
+      cursor,
+      size,
+    })
 
     return {
       currentPage,
@@ -2086,26 +2099,40 @@ export class WalletController extends BaseController {
     }
   }
 
-  getBRC20Summary = async (address: string, ticker: string) => {
-    const tokenSummary = await walletApiService.brc20.getAddressTokenSummary(address, ticker)
+  getBRC20Summary = async ({
+    address,
+    ticker,
+  }: {
+    address: string
+    ticker: string
+  }): Promise<AddressTokenSummary> => {
+    const tokenSummary = await walletApiService.brc20.getAddressTokenSummary({ address, ticker })
     return tokenSummary
   }
 
-  getBRC20TransferableList = async (
-    address: string,
-    ticker: string,
-    currentPage: number,
+  getBRC20TransferableList = async ({
+    address,
+    ticker,
+    tickerHex,
+    currentPage,
+    pageSize,
+  }: {
+    address: string
+    ticker: string
+    tickerHex: string
+    currentPage: number
     pageSize: number
-  ) => {
+  }) => {
     const cursor = (currentPage - 1) * pageSize
     const size = pageSize
 
-    const { total, list } = await walletApiService.brc20.getTokenTransferableList(
+    const { total, list } = await walletApiService.brc20.getTokenTransferableList({
       address,
       ticker,
+      tickerHex,
       cursor,
-      size
-    )
+      size,
+    })
 
     return {
       currentPage,
@@ -3328,10 +3355,18 @@ export class WalletController extends BaseController {
     return walletApiService.brc20.getBRC20RecentHistory(address, ticker)
   }
 
-  getBRC20ProgList = async (address: string, currentPage: number, pageSize: number) => {
+  getBRC20ProgList = async ({
+    address,
+    currentPage,
+    pageSize,
+  }: {
+    address: string
+    currentPage: number
+    pageSize: number
+  }) => {
     const cursor = (currentPage - 1) * pageSize
     const size = pageSize
-    const { total, list } = await walletApiService.brc20.getBRC20ProgList(address, cursor, size)
+    const { total, list } = await walletApiService.brc20.getBRC20ProgList({ address, cursor, size })
 
     return {
       currentPage,
@@ -3444,7 +3479,9 @@ export class WalletController extends BaseController {
       throw new Error('Invalid address')
     }
     const addressType = getAddressType(address, networkType)
-    const originKeyring = keyringService.createTmpKeyring(KeyringType.WatchAddressKeyring, [address])
+    const originKeyring = keyringService.createTmpKeyring(KeyringType.WatchAddressKeyring, [
+      address,
+    ])
     const displayedKeyring = await keyringService.displayForKeyring(originKeyring, addressType, -1)
     return this.displayedKeyringToWalletKeyring(displayedKeyring, -1, false)
   }
@@ -3461,7 +3498,10 @@ export class WalletController extends BaseController {
       addressType,
       keyringService.keyrings.length - 1
     )
-    const keyring = this.displayedKeyringToWalletKeyring(displayedKeyring, keyringService.keyrings.length - 1)
+    const keyring = this.displayedKeyringToWalletKeyring(
+      displayedKeyring,
+      keyringService.keyrings.length - 1
+    )
     await this.changeKeyring(keyring)
   }
 

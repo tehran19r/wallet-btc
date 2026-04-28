@@ -1,14 +1,14 @@
 import { TickPriceItem, TokenBalance } from '@unisat/wallet-shared'
 import { useEffect, useRef, useState } from 'react'
 import {
-  getSupportedAssets,
   OrdinalsAssetTabKey,
+  getSupportedAssets,
   useChainType,
   useCurrentAccount,
   useNavigation,
   useOrdinalsAssetTabKey,
-  useWallet,
   useWallTabFocusRefresh,
+  useWallet,
 } from '..'
 import { useInfiniteList } from './useInfiniteList'
 
@@ -43,7 +43,11 @@ export function useBRC20ProgListLogic() {
         return { list: [], total: 0 }
       }
 
-      const { list, total } = await wallet.getBRC20ProgList(currentAccount.address, page, pageSize)
+      const { list, total } = await wallet.getBRC20ProgList({
+        address: currentAccount.address,
+        currentPage: page,
+        pageSize,
+      })
       if (list.length > 0) {
         wallet.getBrc20sPrice(list.map(item => item.ticker)).then(updatePrices)
       }

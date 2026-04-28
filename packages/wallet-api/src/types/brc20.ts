@@ -10,6 +10,7 @@ export interface TokenBalance {
   availableBalance: string
   overallBalance: string
   ticker: string
+  tickerHex: string
   transferableBalance: string
   availableBalanceSafe: string
   availableBalanceUnSafe: string

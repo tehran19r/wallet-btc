@@ -2,21 +2,29 @@
  * BRC20-related API methods - Fully compatible with openapi.ts
  */
 
-import type { BaseHttpClient, HttpClient } from '../client/http-client'
+import type { BaseHttpClient } from '../client/http-client'
 import type {
-  TokenBalance,
-  TokenInfo,
-  TokenTransfer,
   AddressTokenSummary,
   BRC20HistoryItem,
-  TickPriceItem,
   InscribeOrder,
-  PaginationParams,
+  TickPriceItem,
+  TokenBalance,
+  TokenTransfer,
   UserToSignInput,
 } from '../types'
 
 export class BRC20Service {
   constructor(private readonly httpClient: BaseHttpClient) {}
+
+  private resolveTicker(ticker: string, tickerHex?: string): string {
+    if (!tickerHex) {
+      return ticker
+    }
+    if (!/^[0-9a-fA-F]+$/.test(tickerHex) || tickerHex.length % 2 !== 0) {
+      return ticker
+    }
+    return Buffer.from(tickerHex, 'hex').toString('utf-8')
+  }
 
   // ========================================
   // BRC20 token list and balance
@@ -25,11 +33,15 @@ export class BRC20Service {
   /**
    * Get address BRC20 token list
    */
-  async getBRC20List(
-    address: string,
-    cursor: number,
+  async getBRC20List({
+    address,
+    cursor,
+    size,
+  }: {
+    address: string
+    cursor: number
     size: number
-  ): Promise<{ list: TokenBalance[]; total: number }> {
+  }): Promise<{ list: TokenBalance[]; total: number }> {
     return this.httpClient.get('/v5/brc20/list', {
       query: { address, cursor, size },
     })
@@ -38,10 +50,28 @@ export class BRC20Service {
   /**
    * Get address specific token summary
    */
-  async getAddressTokenSummary(address: string, ticker: string): Promise<AddressTokenSummary> {
-    return this.httpClient.get(
-      `/v5/brc20/token-summary?address=${address}&ticker=${encodeURIComponent(ticker)}`
-    )
+  async getAddressTokenSummary({
+    address,
+    ticker,
+    tickerHex,
+  }: {
+    address: string
+    ticker: string
+    tickerHex?: string
+  }): Promise<AddressTokenSummary> {
+    const originTicker = this.resolveTicker(ticker, tickerHex)
+    const response: AddressTokenSummary = await this.httpClient.get('/v5/brc20/token-summary', {
+      query: {
+        address,
+        ticker: originTicker,
+      },
+    })
+    if (response && response.tokenBalance && !response.tokenBalance.tickerHex) {
+      response.tokenBalance.tickerHex = Buffer.from(response.tokenBalance.ticker, 'utf-8').toString(
+        'hex'
+      )
+    }
+    return response
   }
 
   // ========================================
@@ -51,16 +81,24 @@ export class BRC20Service {
   /**
    * Get address token history list
    */
-  async getAddressTokenHistoryList(
-    address: string,
-    ticker: string,
-    cursor: number,
+  async getAddressTokenHistoryList({
+    address,
+    ticker,
+    tickerHex,
+    cursor,
+    size,
+  }: {
+    address: string
+    ticker: string
+    tickerHex?: string
+    cursor: number
     size: number
-  ): Promise<{ list: TokenTransfer[]; total: number }> {
+  }): Promise<{ list: TokenTransfer[]; total: number }> {
+    const originTicker = this.resolveTicker(ticker, tickerHex)
     return this.httpClient.get('/v5/address/brc20-history', {
       query: {
         address,
-        ticker: encodeURIComponent(ticker),
+        ticker: originTicker,
         cursor,
         size,
       },
@@ -121,16 +159,24 @@ export class BRC20Service {
     })
   }
 
-  async getTokenTransferableList(
-    address: string,
-    ticker: string,
-    cursor: number,
+  async getTokenTransferableList({
+    address,
+    ticker,
+    tickerHex,
+    cursor,
+    size,
+  }: {
+    address: string
+    ticker: string
+    tickerHex?: string
+    cursor: number
     size: number
-  ): Promise<{ list: TokenTransfer[]; total: number }> {
+  }): Promise<{ list: TokenTransfer[]; total: number }> {
+    const originTicker = this.resolveTicker(ticker, tickerHex)
     return this.httpClient.get('/v5/brc20/transferable-list', {
       query: {
         address,
-        ticker: encodeURIComponent(ticker),
+        ticker: originTicker,
         cursor,
         size,
       },
@@ -196,11 +242,15 @@ export class BRC20Service {
     return this.httpClient.post('/v5/brc20/single-step-transfer/sign-reveal', params)
   }
 
-  async getBRC20ProgList(
-    address: string,
-    cursor: number,
+  async getBRC20ProgList({
+    address,
+    cursor,
+    size,
+  }: {
+    address: string
+    cursor: number
     size: number
-  ): Promise<{ list: TokenBalance[]; total: number }> {
+  }): Promise<{ list: TokenBalance[]; total: number }> {
     return this.httpClient.get('/v5/brc20-prog/list', { query: { address, cursor, size, type: 5 } })
   }
 }

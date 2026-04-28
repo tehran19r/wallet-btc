@@ -296,12 +296,13 @@ export function useTransferableListLogic({ contextData, updateContextData }: BRC
   const fetchData = async () => {
     try {
       setLoading(true)
-      const { list, total } = await wallet.getBRC20TransferableList(
-        currentAccount.address,
-        contextData.tokenBalance.ticker,
-        pagination.currentPage,
-        pagination.pageSize
-      )
+      const { list, total } = await wallet.getBRC20TransferableList({
+        address: currentAccount.address,
+        ticker: contextData.tokenBalance.ticker,
+        tickerHex: contextData.tokenBalance.tickerHex,
+        currentPage: pagination.currentPage,
+        pageSize: pagination.pageSize,
+      })
       setItems(list)
       setTotal(total)
     } catch (e) {

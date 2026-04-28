@@ -182,6 +182,7 @@ export function useBRC20TokenScreenLogic() {
   const [tokenSummary, setTokenSummary] = useState<AddressTokenSummary>({
     tokenBalance: {
       ticker,
+      tickerHex: Buffer.from(ticker).toString('hex'),
       overallBalance: '',
       availableBalance: '',
       transferableBalance: '',
@@ -214,7 +215,10 @@ export function useBRC20TokenScreenLogic() {
   const resetTxState = useResetTxState()
   useEffect(() => {
     wallet
-      .getBRC20Summary(account.address, ticker)
+      .getBRC20Summary({
+        address: account.address,
+        ticker,
+      })
       .then(tokenSummary => {
         if (tokenSummary.tokenInfo.holder == account.address) {
           wallet

@@ -6,8 +6,8 @@ import {
   useCurrentAccount,
   useNavigation,
   useOrdinalsAssetTabKey,
-  useWallet,
   useWallTabFocusRefresh,
+  useWallet,
 } from '..'
 import { useInfiniteList } from './useInfiniteList'
 
@@ -41,7 +41,11 @@ export function useBRC20ListLogic() {
       if (currentAccount.address === '') {
         return { list: [], total: 0 }
       }
-      const { list, total } = await wallet.getBRC20List(currentAccount.address, page, pageSize)
+      const { list, total } = await wallet.getBRC20List({
+        address: currentAccount.address,
+        currentPage: page,
+        pageSize,
+      })
       if (list.length > 0) {
         wallet.getBrc20sPrice(list.map(item => item.ticker)).then(updatePrices)
       }

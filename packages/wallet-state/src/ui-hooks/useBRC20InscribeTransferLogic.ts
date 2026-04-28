@@ -180,7 +180,10 @@ export function useBRC20InscribeTransferLogicStep1(params: BRC20InscribeTransfer
     fetchUtxos()
 
     wallet
-      .getBRC20Summary(account.address, contextData.ticker)
+      .getBRC20Summary({
+        address: account.address,
+        ticker: contextData.ticker,
+      })
       .then(v => {
         updateContextData({ tokenBalance: v.tokenBalance, tokenInfo: v.tokenInfo })
         setTimeout(() => {
@@ -367,7 +370,10 @@ export function useBRC20InscribeTransferLogicStep4(params: BRC20InscribeTransfer
   const onClickConfirm = () => {
     tools.showLoading(true)
     wallet
-      .getBRC20Summary(currentAccount.address, tokenBalance.ticker)
+      .getBRC20Summary({
+        address: currentAccount.address,
+        ticker: tokenBalance.ticker,
+      })
       .then(v => {
         if (contextData.isApproval) {
           resolveApproval({

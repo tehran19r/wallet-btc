@@ -18,10 +18,10 @@ import {
   Announcement,
   AppInfo,
   AppSummary,
+  BRC20HistoryItem,
   BabylonAddressSummary,
   BitcoinBalance,
   BitcoinBalanceV2,
-  BRC20HistoryItem,
   BtcChannelItem,
   CAT20Balance,
   CAT20MergeOrder,
@@ -32,27 +32,27 @@ import {
   CosmosSignDataType,
   DecodedPsbt,
   DummyTxType,
-  LocalPsbtSummary,
   FeeSummary,
   InscribeOrder,
   Inscription,
   InscriptionSummary,
+  LocalPsbtSummary,
   RateUsStatus,
   RuneBalance,
+  SignPsbtOptions,
   SignedData,
   SignedMessage,
-  SignPsbtOptions,
   StoredNotification,
   TickPriceItem,
-  TokenBalance,
-  TokenTransfer,
   ToSignData,
   ToSignInput,
   ToSignMessage,
+  TokenBalance,
+  TokenTransfer,
   TxHistoryItem,
-  UnspentOutput,
   UTXO,
   UTXO_Detail,
+  UnspentOutput,
   VersionDetail,
   WalletConfig,
   WalletKeyring,
@@ -339,24 +339,39 @@ export interface WalletController {
     pageSize: number
   ): Promise<{ currentPage: number; pageSize: number; total: number; list: Inscription[] }>
 
-  getBRC20List(
-    address: string,
-    currentPage: number,
+  getBRC20List({
+    address,
+    currentPage,
+    pageSize,
+  }: {
+    address: string
+    currentPage: number
     pageSize: number
-  ): Promise<{ currentPage: number; pageSize: number; total: number; list: TokenBalance[] }>
+  }): Promise<{ currentPage: number; pageSize: number; total: number; list: TokenBalance[] }>
 
-  getBRC20ProgList(
-    address: string,
-    currentPage: number,
+  getBRC20ProgList({
+    address,
+    currentPage,
+    pageSize,
+  }: {
+    address: string
+    currentPage: number
     pageSize: number
-  ): Promise<{ currentPage: number; pageSize: number; total: number; list: TokenBalance[] }>
+  }): Promise<{ currentPage: number; pageSize: number; total: number; list: TokenBalance[] }>
 
-  getBRC20TransferableList(
-    address: string,
-    ticker: string,
-    currentPage: number,
+  getBRC20TransferableList({
+    address,
+    ticker,
+    tickerHex,
+    currentPage,
+    pageSize,
+  }: {
+    address: string
+    ticker: string
+    tickerHex: string
+    currentPage: number
     pageSize: number
-  ): Promise<{ currentPage: number; pageSize: number; total: number; list: TokenTransfer[] }>
+  }): Promise<{ currentPage: number; pageSize: number; total: number; list: TokenTransfer[] }>
 
   getOrdinalsInscriptions(
     address: string,
@@ -364,7 +379,13 @@ export interface WalletController {
     pageSize: number
   ): Promise<{ currentPage: number; pageSize: number; total: number; list: Inscription[] }>
 
-  getBRC20Summary(address: string, ticker: string): Promise<AddressTokenSummary>
+  getBRC20Summary({
+    address,
+    ticker,
+  }: {
+    address: string
+    ticker: string
+  }): Promise<AddressTokenSummary>
 
   expireUICachedData(address: string): Promise<void>
 
@@ -711,4 +732,4 @@ const useWallet = () => {
   return wallet
 }
 
-export { useWallet, WalletProvider }
+export { WalletProvider, useWallet }
