@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Column, Icon, Row, Text } from '@/ui/components';
 import { colors } from '@/ui/theme/colors';
 import { CAT_VERSION } from '@unisat/wallet-shared';
-import { CATAssetTabKey, uiActions, useAppDispatch, useCATAssetTabKey } from '@unisat/wallet-state';
+import { AssetTabKey, CATAssetTabKey, uiActions, useAppDispatch, useAssetTabKey, useCATAssetTabKey } from '@unisat/wallet-state';
 
 import { CAT20List } from './CAT20List';
 import { CAT721List } from './CAT721List';
@@ -139,10 +139,34 @@ function TabDropdown({ tab, isExpanded, selectedKey, onToggle, onSelect }: TabDr
 }
 
 export function CATTab() {
+  const assetTabKey = useAssetTabKey();
   const currentTabKey = useCATAssetTabKey();
   const dispatch = useAppDispatch();
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   const [expandedTab, setExpandedTab] = useState<MainTabKey | null>(null);
+
+  useEffect(() => {
+    if (assetTabKey !== AssetTabKey.CAT && expandedTab) {
+      setExpandedTab(null);
+    }
+  }, [assetTabKey, expandedTab]);
+
+  useEffect(() => {
+    if (!expandedTab) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(event.target as Node)) {
+        setExpandedTab(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [expandedTab]);
 
   const tabConfigs = useMemo(
     (): TabConfig[] => [
@@ -207,7 +231,8 @@ export function CATTab() {
   }, [currentTabKey]);
 
   return (
-    <Column>
+    <div ref={rootRef}>
+      <Column>
       <Row justifyBetween>
         <Row gap="zero">
           {tabConfigs.map((tab) => (
@@ -224,6 +249,7 @@ export function CATTab() {
       </Row>
 
       {renderActiveChildren}
-    </Column>
+      </Column>
+    </div>
   );
 }
